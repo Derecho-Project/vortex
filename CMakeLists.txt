@@ -169,6 +169,8 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/layout.json
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/layout.json.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/layout.json
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/layout.json.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/layout.json
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/dfgs.json.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/dfgs.json
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/dfgs.json.tmp
@@ -177,6 +179,8 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/dfgs.json
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/dfgs.json.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/dfgs.json
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/dfgs.json.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/dfgs.json
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
@@ -185,6 +189,8 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/udl_dlls.cfg
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/clear_log.sh 
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
@@ -193,18 +199,26 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/clear_log.sh 
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/clear_log.sh
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/clear_log.sh
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/perf_data
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/perf_data
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/perf_data
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/setup
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/setup
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/setup
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/setup
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/setup
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/setup
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/latency_client
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/latency_client
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/latency_client
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/latency_client
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/latency_client
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/latency_client
     COMMAND chmod 755 ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cfg/clear_log.sh.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/layout.json.tmp
