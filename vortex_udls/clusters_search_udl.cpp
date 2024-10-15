@@ -109,6 +109,9 @@ private:
         TimestampLogger::log(LOG_CLUSTER_SEARCH_DESERIALIZE_END,client_id,query_batch_id,cluster_id);
 #endif
         cluster_search_index.at(cluster_id)->add_queries(nq, data, std::move(query_list), key_string);
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+        TimestampLogger::log(LOG_CLUSTER_SEARCH_ADDED_TOBATCH,client_id,query_batch_id,cluster_id);
+#endif
         cluster_search_index_cv.notify_one();
         dbg_default_trace("[Cluster search ocdpo]: FINISHED knn search for key: {}.", key_string );
     }

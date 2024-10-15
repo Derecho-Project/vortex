@@ -103,14 +103,36 @@ public:
                     float* D = nullptr; // searched result distance
                     std::vector<std::string> query_list;
                     std::vector<std::string> query_keys;
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+                    std::vector<tuple<int, int>> query_batch_ids;
+                    for (const auto& key : query_keys) {
+                        int client_id = -1;
+                        int query_batch_id = -1;
+                        bool usable_logging_key = parse_batch_id(key_string, client_id, query_batch_id); // Logging purpose
+                        if (!usable_logging_key)
+                            dbg_default_error("Failed to parse client_id and query_batch_id from key: {}, unable to track correctly.", key_string);
+                        TimestampLogger::log(LOG_CLUSTER_SEARCH_FAISS_SEARCH_START,client_id,query_batch_id,cluster_id);
+                        query_batch_ids.emplace_back(client_id, query_batch_id);
+                    }
+#endif
                     bool search_success = cluster_index->batchedSearch(top_k, &D, &I, query_list, query_keys);
                     if (!search_success || !I || !D) {
                         dbg_default_error("Failed to batch search for cluster: {}", cluster_id);
                         continue;
                     }
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+                    for (const auto& [client_id, query_batch_id] : query_batch_ids) {
+                        TimestampLogger::log(LOG_CLUSTER_SEARCH_FAISS_SEARCH_END,client_id,query_batch_id,cluster_id);
+                    }
+#endif
                     std::vector<std::string> new_keys;
                     construct_new_keys(new_keys, query_keys, query_list);
 
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+                    for (const auto& [client_id, query_batch_id] : query_batch_ids) {
+                        TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_EMIT_START,client_id,query_batch_id,cluster_id);
+                    }
+#endif
                     for (size_t k = 0; k < query_list.size(); ++k) {
                         ObjectWithStringKey obj;
                         obj.key = std::string(EMIT_AGGREGATE_PREFIX) + "/" + new_keys[k];

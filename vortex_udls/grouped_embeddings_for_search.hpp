@@ -233,6 +233,9 @@ public:
           std::unique_lock<std::mutex> lock(query_embs_mutex);
           query_embs_in_search = true;
           int nq = this->added_query_offset / this->emb_dim;
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+          TimestampLogger::log(LOG_CLUSTER_SEARCH_FAISS_SEARCH_BATCH_SIZE,nq,0,0);
+#endif
           if (nq == 0) {
                // This case should not happen
                query_embs_in_search = false;
