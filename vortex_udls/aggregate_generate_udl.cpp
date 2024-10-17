@@ -353,6 +353,7 @@ class AggGenOCDPO: public DefaultOffCriticalDataPathObserver {
             std::string notification_pathname = "/rag/results/" + std::to_string(client_id);
             typed_ctxt->get_service_client_ref().notify(result_blob,notification_pathname,client_id);
             dbg_default_trace("[AggregateGenUDL] echo back to node {}", client_id);
+            std::cout << "[AggregateGenUDL] echo back to node " << client_id << std::endl;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
             TimestampLogger::log(LOG_TAG_AGG_UDL_PUT_RESULT_END, client_id, query_batch_id, qid);
 #endif
