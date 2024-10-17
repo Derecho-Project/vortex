@@ -175,6 +175,7 @@ class CentroidsSearchOCDPO: public DefaultOffCriticalDataPathObserver {
             TimestampLogger::log(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_START,client_id,query_batch_id,pair.first);
 #endif
             emit(new_key, EMIT_NO_VERSION_AND_TIMESTAMP , blob);
+            std::cout << "[Centr] Emitted key: " << new_key << std::endl;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
             TimestampLogger::log(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_END,client_id,query_batch_id,pair.first);
 #endif
