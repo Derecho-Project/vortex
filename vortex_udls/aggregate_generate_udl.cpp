@@ -264,7 +264,7 @@ class AggGenOCDPO: public DefaultOffCriticalDataPathObserver {
             dbg_default_error("In {}, Failed to parse the query_info from the key_string:{}.", __func__, key_string);
             return;
         }
-        
+        std::cout << "[AGG] received key: " << key_string << std::endl;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
         int query_batch_id = batch_id * QUERY_BATCH_ID_MODULUS + qid % QUERY_BATCH_ID_MODULUS; // cast down qid for logging purpose
         TimestampLogger::log(LOG_TAG_AGG_UDL_START,client_id,query_batch_id,cluster_id);
