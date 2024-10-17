@@ -137,7 +137,6 @@ public:
                         std::string query_emit_content = serialize_cluster_search_result(top_k, I, D, k, query_list[k]);
                         obj.blob = Blob(reinterpret_cast<const uint8_t*>(query_emit_content.c_str()), query_emit_content.size());
                         typed_ctxt->get_service_client_ref().put_and_forget(obj);
-                        std::cout << "Emitting key: " << obj.key << std::endl;
                     }
 
                     delete[] I;

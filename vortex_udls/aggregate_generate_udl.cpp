@@ -264,7 +264,6 @@ class AggGenOCDPO: public DefaultOffCriticalDataPathObserver {
             dbg_default_error("In {}, Failed to parse the query_info from the key_string:{}.", __func__, key_string);
             return;
         }
-        std::cout << "[AGG] received key: " << key_string << std::endl;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
         int query_batch_id = batch_id * QUERY_BATCH_ID_MODULUS + qid % QUERY_BATCH_ID_MODULUS; // cast down qid for logging purpose
         TimestampLogger::log(LOG_TAG_AGG_UDL_START,client_id,query_batch_id,cluster_id);
@@ -353,7 +352,6 @@ class AggGenOCDPO: public DefaultOffCriticalDataPathObserver {
             std::string notification_pathname = "/rag/results/" + std::to_string(client_id);
             typed_ctxt->get_service_client_ref().notify(result_blob,notification_pathname,client_id);
             dbg_default_trace("[AggregateGenUDL] echo back to node {}", client_id);
-            std::cout << "[AggregateGenUDL] echo back to node " << client_id << std::endl;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
             TimestampLogger::log(LOG_TAG_AGG_UDL_PUT_RESULT_END, client_id, query_batch_id, qid);
 #endif
