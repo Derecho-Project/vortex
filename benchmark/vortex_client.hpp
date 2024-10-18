@@ -33,10 +33,10 @@ class VortexPerfClient{
      int embedding_dim = 1024;
 
      // Use vector since one query may be reuse for multiple times among different batches. 
-     // sent_queries: query_text -> batch_id
+     // sent_queries: query_text -> [(batch_id,query_id), ...]
      // Note, we are currently not handling the case if there are duplicated queries in the same batch. 
-     // TODO: this should be done at client side, here. To avoid send batch with duplication but keep track of it to return to the RESTFUL clients that have the same query.
-     std::unordered_map<std::string, std::vector<uint32_t>> sent_queries;
+     // this should be done at client side, here. To avoid send batch with duplication but keep track of it to return to the RESTFUL clients that have the same query.
+     std::unordered_map<std::string, std::vector<std::tuple<uint32_t,uint32_t>>> sent_queries;
      std::unordered_map<std::string, std::vector<std::string>> query_results; 
      std::atomic<bool> running;
      std::atomic<int> num_queries_to_send;

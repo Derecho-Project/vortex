@@ -97,45 +97,28 @@ public:
             for (int j = 0; j < clusters_size; ++j) {
                 if (it == cluster_search_index.end()) it = cluster_search_index.begin();
                 auto& [cluster_id, cluster_index] = *it;
-
                 if (cluster_index->has_pending_queries()) {
                     long* I = nullptr; // searched result index, which should be allocated by the batched Search function
                     float* D = nullptr; // searched result distance
                     std::vector<std::string> query_list;
                     std::vector<std::string> query_keys;
-#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                    std::vector<std::tuple<int, int>> query_batch_infos;
-                    for (const auto& key : query_keys) {
-                        int client_id = -1;
-                        int query_batch_id = -1;
-                        parse_batch_id(key, client_id, query_batch_id); // Logging purpose
-                        TimestampLogger::log(LOG_CLUSTER_SEARCH_FAISS_SEARCH_START,client_id,query_batch_id,cluster_id);
-                        query_batch_infos.emplace_back(client_id, query_batch_id);
-                    }
-#endif
-                    bool search_success = cluster_index->batchedSearch(top_k, &D, &I, query_list, query_keys);
+                    bool search_success = cluster_index->batchedSearch(top_k, &D, &I, query_list, query_keys, cluster_id);
                     if (!search_success || !I || !D) {
                         dbg_default_error("Failed to batch search for cluster: {}", cluster_id);
                         continue;
                     }
-#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                    for (const auto& batch_info: query_batch_infos) {
-                        TimestampLogger::log(LOG_CLUSTER_SEARCH_FAISS_SEARCH_END,std::get<0>(batch_info),std::get<1>(batch_info),cluster_id);
-                    }
-#endif
                     std::vector<std::string> new_keys;
                     construct_new_keys(new_keys, query_keys, query_list);
-
-#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                    for (const auto& batch_info: query_batch_infos) {
-                        TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_EMIT_START,std::get<0>(batch_info),std::get<1>(batch_info),cluster_id);
-                    }
-#endif
                     for (size_t k = 0; k < query_list.size(); ++k) {
                         ObjectWithStringKey obj;
                         obj.key = std::string(EMIT_AGGREGATE_PREFIX) + "/" + new_keys[k];
                         std::string query_emit_content = serialize_cluster_search_result(top_k, I, D, k, query_list[k]);
                         obj.blob = Blob(reinterpret_cast<const uint8_t*>(query_emit_content.c_str()), query_emit_content.size());
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+                        int client_id = -1, query_batch_id = -1;
+                        parse_batch_id(obj.key, client_id, query_batch_id);
+                        TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_EMIT_START,client_id,query_batch_id,cluster_id);
+#endif
                         typed_ctxt->get_service_client_ref().put_and_forget(obj);
                     }
 

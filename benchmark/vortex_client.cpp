@@ -128,16 +128,18 @@ int VortexPerfClient::register_notification_on_all_servers(ServiceClientAPI& cap
                          this->query_results[query_text] = top_k_docs;
                     }
                     if (this->sent_queries.find(query_text) != this->sent_queries.end()) {
-                         uint32_t batch_id = query_batch_id / QUERY_BATCH_ID_MODULUS;
-                         uint32_t q_id = query_batch_id % QUERY_BATCH_ID_MODULUS;
+                         auto& tuple_vector = this->sent_queries[query_text];
+                         if (!tuple_vector.empty()) {
+                              auto first_tuple = tuple_vector.front();       
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                         TimestampLogger::log(LOG_TAG_QUERIES_RESULT_CLIENT_RECEIVED,this->my_node_id,query_batch_id,q_id);
+                         TimestampLogger::log(LOG_TAG_QUERIES_RESULT_CLIENT_RECEIVED,this->my_node_id,std::get<0>(first_tuple),std::get<1>(first_tuple));
 #endif
-                         // std::cout << "Received result for query: " << query_text << " from client: " << this->my_node_id << " batch_id: " << batch_id << " q_id: " << q_id << std::endl;
-                         // remove batch_id from this->sent_queries
-                         this->sent_queries[query_text].erase(std::remove(this->sent_queries[query_text].begin(), this->sent_queries[query_text].end(), batch_id), this->sent_queries[query_text].end());                        
-                         if (this->sent_queries[query_text].size() == 0) {
-                              this->sent_queries.erase(query_text);
+                              // std::cout << "Received result for query: " << query_text << " from client: " << this->my_node_id << " batch_id: " << batch_id << " q_id: " << q_id << std::endl;
+                              // remove batch_id from this->sent_queries
+                              tuple_vector.erase(tuple_vector.begin());
+                              if (tuple_vector.empty()) {
+                                   this->sent_queries.erase(query_text);
+                              }
                          }
                     } else {
                          std::cerr << "Error: received result for query that is not sent." << std::endl;
@@ -211,9 +213,9 @@ bool VortexPerfClient::run_perf_test(ServiceClientAPI& capi, std::string& query_
               cur_query_list.push_back(queries[pos]);
               cur_query_ids.push_back(pos);
               if (this->sent_queries.find(queries[pos]) == this->sent_queries.end()) {
-                   this->sent_queries[queries[pos]] = std::vector<uint32_t>();
+                   this->sent_queries[queries[pos]] = std::vector<std::tuple<uint32_t,uint32_t>>();
               }
-              this->sent_queries[queries[pos]].push_back((uint32_t)batch_id);
+              this->sent_queries[queries[pos]].push_back(std::make_tuple((uint32_t)batch_id, (uint32_t)j));
           }
           // 2.2. Prepare query embeddings
           std::unique_ptr<float[]> query_embeddings(new float[this->embedding_dim * this->batch_size]);

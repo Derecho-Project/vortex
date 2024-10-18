@@ -28,7 +28,7 @@ namespace cascade{
 
 class GroupedEmbeddingsForSearch{
 // Class to store group of embeddings, which could be the embeddings of a cluster or embeddings of all centroids
-
+public:
      int faiss_search_type; // 0: CPU flat search, 1: GPU flat search, 2: GPU IVF search
      int emb_dim;  //  e.g. 512. The dimension of each embedding
      int num_embs;  //  e.g. 1000. The number of embeddings in the array
@@ -50,10 +50,10 @@ class GroupedEmbeddingsForSearch{
 
 
 
-public:
+
 
      GroupedEmbeddingsForSearch(int type, int dim) 
-          : faiss_search_type(type), emb_dim(dim), num_embs(0), added_query_offset(0), query_embs_in_search(false) {
+          : faiss_search_type(type), emb_dim(dim), num_embs(0), embeddings(nullptr),added_query_offset(0), query_embs_in_search(false) {
           query_embs = new float[dim * MAX_NUM_QUERIES_PER_BATCH];
      }
 
@@ -226,15 +226,17 @@ public:
       * @param top_k: number of top embeddings to return
       * @param D: distance array, storing the distance of the top_k embeddings
       * @param I: index array, storing the index of the top_k embeddings
-      * @param query_list: the list of query texts that have been batchSearched on  
+      * @param q_list: the list of query texts that have been batchSearched on  
+      * @param q_keys: the list of query keys that have been batchSearched on
+      * @param cluster_id: the cluster id that the queries belong to (used for logger)
       * @return true if the search is successful, false otherwise
       */
-     bool batchedSearch(int top_k, float** D, long** I, std::vector<std::string>& query_list, std::vector<std::string>& query_keys){
+     bool batchedSearch(int top_k, float** D, long** I, std::vector<std::string>& q_list, std::vector<std::string>& q_keys, int cluster_id){
           std::unique_lock<std::mutex> lock(query_embs_mutex);
           query_embs_in_search = true;
           int nq = this->added_query_offset / this->emb_dim;
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-          TimestampLogger::log(LOG_FAISS_SEARCH_BATCH_SIZE,nq,0,0);
+          TimestampLogger::log(LOG_BATCH_FAISS_SEARCH_SIZE,nq,0,0);
 #endif
           if (nq == 0) {
                // This case should not happen
@@ -245,11 +247,27 @@ public:
           }
           *I = new long[top_k * nq];
           *D = new float[top_k * nq];
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+          std::vector<std::tuple<int, int>> query_batch_infos;
+          for (const auto& key : this->query_keys) {
+               int client_id = -1;
+               int query_batch_id = -1;
+               parse_batch_id(key, client_id, query_batch_id); // Logging purpose
+               TimestampLogger::log(LOG_BATCH_FAISS_SEARCH_START,client_id,query_batch_id,cluster_id);
+               query_batch_infos.emplace_back(client_id, query_batch_id);
+               std::cout << "logged batch search start" << std::endl;
+          }
+#endif
           search(nq, this->query_embs, top_k, *D, *I);
+#ifdef ENABLE_VORTEX_EVALUATION_LOGGING
+          for (const auto& batch_info: query_batch_infos) {
+               TimestampLogger::log(LOG_BATCH_FAISS_SEARCH_END,std::get<0>(batch_info),std::get<1>(batch_info),cluster_id);
+          }
+#endif
           // reset the query_embs array and transfer ownership of the query_texts
           this->added_query_offset = 0;
-          query_list = std::move(this->query_texts);
-          query_keys = std::move(this->query_keys);
+          q_list = std::move(this->query_texts);
+          q_keys = std::move(this->query_keys);
           // std::fill(this->query_embs, this->query_embs + nq * this->emb_dim, 0);  // could be skipped since already reset the offset
           query_embs_in_search = false;
           query_embs_cv.notify_one();
@@ -369,8 +387,22 @@ public:
 
      ~GroupedEmbeddingsForSearch() {
           // free(embeddings);
-          delete[] this->embeddings;
-          delete[] this->query_embs;
+          if (this->embeddings != nullptr) {
+               free(this->embeddings);
+               this->embeddings = nullptr; 
+          }
+          if (this->query_embs != nullptr) {
+               delete[] this->query_embs;
+               this->query_embs = nullptr;
+          }
+          // if (this->faiss_search_type == 0 && this->cpu_flatl2_index != nullptr) {
+          //      this->cpu_flatl2_index->reset();
+          // } else if (this->faiss_search_type == 1 && this->gpu_flatl2_index != nullptr) {
+          //      cudaDeviceSynchronize(); 
+          //      this->gpu_flatl2_index->reset();
+          // } else if (this->faiss_search_type == 2 && this->gpu_ivf_flatl2_index != nullptr) {
+          //      this->gpu_ivf_flatl2_index->reset();
+          // }
      }
 
 };

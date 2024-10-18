@@ -157,6 +157,27 @@ public:
         if (search_worker_thread.joinable()) {
             search_worker_thread.join();
         }
+        std::unique_lock<std::shared_mutex> lock(cluster_search_index_map_mutex);
+    
+        /*** TODO: this fix still doesn't work, because CUDA shuts down earlier than here.  */
+        int device;
+        cudaError_t err = cudaGetDevice(&device);
+        if (err != cudaSuccess) {
+            std::cerr << "CUDA context is unavailable: " << cudaGetErrorString(err) << std::endl;
+            return;  
+        }
+        for (auto& entry : cluster_search_index) {
+            if (entry.second->faiss_search_type == 1 && entry.second->gpu_flatl2_index != nullptr) {
+                cudaError_t sync_err = cudaDeviceSynchronize();
+                if (sync_err != cudaSuccess) {
+                    std::cerr << "Error during cudaDeviceSynchronize: " << cudaGetErrorString(sync_err) << std::endl;
+                    continue;
+                }
+                entry.second->gpu_flatl2_index->reset();
+            }
+        }
+        cluster_search_index.clear();
+        cudaDeviceReset();
     }
 };
 
