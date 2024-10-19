@@ -385,6 +385,41 @@ public:
           return 0;
      }
 
+     /***
+      * Reset the GroupedEmbeddingsForSearch object
+      * This function is called when the UDL is released
+      */
+     void reset(){
+          if (this->embeddings != nullptr) {
+               free(this->embeddings);
+               this->embeddings = nullptr; 
+          }
+          if (this->query_embs != nullptr) {
+               delete[] this->query_embs;
+               this->query_embs = nullptr;
+          }
+          // FAISS index cleanup 
+          if (this->faiss_search_type == 0 && this->cpu_flatl2_index != nullptr) {
+               this->cpu_flatl2_index->reset();
+          } 
+          else if (this->faiss_search_type == 1 && this->gpu_flatl2_index != nullptr) {
+               cudaError_t sync_err = cudaDeviceSynchronize();
+               if (sync_err == cudaSuccess) {
+                    this->gpu_flatl2_index->reset();  
+               } else {
+                    std::cerr << "Error during cudaDeviceSynchronize: " << cudaGetErrorString(sync_err) << std::endl;
+               }
+          } 
+          else if (this->faiss_search_type == 2 && this->gpu_ivf_flatl2_index != nullptr) {
+               cudaError_t sync_err = cudaDeviceSynchronize();
+               if (sync_err == cudaSuccess) {
+                    this->gpu_ivf_flatl2_index->reset();  
+               } else {
+                    std::cerr << "Error during cudaDeviceSynchronize: " << cudaGetErrorString(sync_err) << std::endl;
+               }
+          }
+     }
+
      ~GroupedEmbeddingsForSearch() {
           // free(embeddings);
           if (this->embeddings != nullptr) {
@@ -395,14 +430,6 @@ public:
                delete[] this->query_embs;
                this->query_embs = nullptr;
           }
-          // if (this->faiss_search_type == 0 && this->cpu_flatl2_index != nullptr) {
-          //      this->cpu_flatl2_index->reset();
-          // } else if (this->faiss_search_type == 1 && this->gpu_flatl2_index != nullptr) {
-          //      cudaDeviceSynchronize(); 
-          //      this->gpu_flatl2_index->reset();
-          // } else if (this->faiss_search_type == 2 && this->gpu_ivf_flatl2_index != nullptr) {
-          //      this->gpu_ivf_flatl2_index->reset();
-          // }
      }
 
 };

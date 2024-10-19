@@ -10,6 +10,8 @@ namespace cascade{
 #define MY_UUID     "11a2c123-2200-21ac-1755-0002ac220000"
 #define MY_DESC     "UDL search within the clusters to find the top K embeddings that the queries close to."
 
+#define CLUSTER_EMB_OBJECTPOOL_PREFIX "/rag/emb/cluster"
+
 std::string get_uuid() {
     return MY_UUID;
 }
@@ -45,7 +47,7 @@ private:
                                uint32_t worker_id) override {
         /*** Note: this object_pool_pathname is trigger pathname prefix: /rag/emb/clusteres_search instead of /rag/emb, i.e. the objp name***/
         dbg_default_trace("[Clusters search ocdpo]: I({}) received an object from sender:{} with key={}", worker_id, sender, key_string);
-        // 0. get the cluster ID
+        // 0. parse the key, get the cluster ID
         int cluster_id;
         bool extracted_clusterid = parse_number(key_string, CLUSTER_KEY_DELIMITER, cluster_id); 
         if (!extracted_clusterid) {
@@ -62,35 +64,33 @@ private:
         TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_START,client_id,query_batch_id,cluster_id);
 #endif
         // 1. check if local cache contains the embeddings of the cluster
-        // std::unique_lock<std::mutex> lock(this->cluster_search_index_map_mutex);
         {
-            std::shared_lock<std::shared_mutex> read_lock(cluster_search_index_map_mutex);
-            auto it = this->cluster_search_index.find(cluster_id);
-            if (it == this->cluster_search_index.end()){
+        std::shared_lock<std::shared_mutex> read_lock(cluster_search_index_map_mutex);
+        if (this->cluster_search_index.find(cluster_id) == this->cluster_search_index.end()) {
+            read_lock.unlock();  // Unlock the read lock to acquire a write lock
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_LOADEMB_START,this->my_id,cluster_id,0);
+            TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_LOADEMB_START, this->my_id, cluster_id, 0);
 #endif
-                read_lock.unlock();
-                std::unique_lock<std::shared_mutex> write_lock(cluster_search_index_map_mutex);
-                // load the embeddings of the cluster from the cascade
-                
-                this->cluster_search_index[cluster_id]= std::make_unique<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim);
-                std::string cluster_prefix = "/rag/emb/cluster" + std::to_string(cluster_id);
-                int filled_cluster_embs = this->cluster_search_index[cluster_id]->retrieve_grouped_embeddings(cluster_prefix,typed_ctxt);
+            // Acquire a unique lock to modify the cluster search index
+            std::unique_lock<std::shared_mutex> write_lock(cluster_search_index_map_mutex);
+            // Double-check if the cluster was inserted by another thread
+            if (this->cluster_search_index.find(cluster_id) == this->cluster_search_index.end()) {
+                this->cluster_search_index[cluster_id] = std::make_unique<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim);
+                std::string cluster_prefix = CLUSTER_EMB_OBJECTPOOL_PREFIX + std::to_string(cluster_id);
+                int filled_cluster_embs = this->cluster_search_index[cluster_id]->retrieve_grouped_embeddings(cluster_prefix, typed_ctxt);
                 if (filled_cluster_embs == -1) {
                     std::cerr << "Error: failed to fill the cluster embeddings in cache" << std::endl;
                     dbg_default_error("Failed to fill the cluster embeddings in cache, at clusters_search_udl.");
                     return;
                 }
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
-                TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_LOADEMB_END,this->my_id,cluster_id,0);
+                TimestampLogger::log(LOG_CLUSTER_SEARCH_UDL_LOADEMB_END, this->my_id, cluster_id, 0);
 #endif
-                it = this->cluster_search_index.find(cluster_id);
             }
         }
+    }
 
         // 2. get the query embeddings from the object
-
         float* data;
         uint32_t nq;
         std::vector<std::string> query_list;
@@ -104,6 +104,8 @@ private:
             dbg_default_error("{}, Failed to deserialize the query embeddings and query texts from the object.", __func__);
             return;
         }
+
+        // 3. add the queries to the queueing batch
 #ifdef ENABLE_VORTEX_EVALUATION_LOGGING
         TimestampLogger::log(LOG_CLUSTER_SEARCH_DESERIALIZE_END,client_id,query_batch_id,cluster_id);
 #endif
@@ -151,33 +153,22 @@ public:
     }
 
     /*** TODO: double check the correct way to clean up thread */
+    void shutdown() {
+        std::unique_lock<std::shared_mutex> lock(cluster_search_index_map_mutex);
+        // Clean up FAISS index resources
+        for (auto& entry : cluster_search_index) {
+            entry.second->reset();
+        }
+
+        cluster_search_index.clear();
+    }
+
     ~ClustersSearchOCDPO() {
         execution_thread_running = false;
         cluster_search_index_cv.notify_all();
         if (search_worker_thread.joinable()) {
             search_worker_thread.join();
         }
-        std::unique_lock<std::shared_mutex> lock(cluster_search_index_map_mutex);
-    
-        /*** TODO: this fix still doesn't work, because CUDA shuts down earlier than here.  */
-        int device;
-        cudaError_t err = cudaGetDevice(&device);
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA context is unavailable: " << cudaGetErrorString(err) << std::endl;
-            return;  
-        }
-        for (auto& entry : cluster_search_index) {
-            if (entry.second->faiss_search_type == 1 && entry.second->gpu_flatl2_index != nullptr) {
-                cudaError_t sync_err = cudaDeviceSynchronize();
-                if (sync_err != cudaSuccess) {
-                    std::cerr << "Error during cudaDeviceSynchronize: " << cudaGetErrorString(sync_err) << std::endl;
-                    continue;
-                }
-                entry.second->gpu_flatl2_index->reset();
-            }
-        }
-        cluster_search_index.clear();
-        cudaDeviceReset();
     }
 };
 
@@ -195,7 +186,11 @@ std::shared_ptr<OffCriticalDataPathObserver> get_observer(
 }
 
 void release(ICascadeContext* ctxt) {
-    // nothing to release
+    cudaError_t sync_err = cudaDeviceSynchronize();
+    if (sync_err != cudaSuccess) {
+        std::cerr << "Error during cudaDeviceSynchronize in release: " << cudaGetErrorString(sync_err) << std::endl;
+    } 
+    std::static_pointer_cast<ClustersSearchOCDPO>(ClustersSearchOCDPO::get())->shutdown();  
     return;
 }
 
