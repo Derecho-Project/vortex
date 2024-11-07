@@ -17,6 +17,8 @@ find_package(cascade CONFIG REQUIRED)
 find_package(Faiss REQUIRED)
 # Find CUDA Toolkit if using Faiss with GPU support
 find_package(CUDAToolkit REQUIRED)
+# Find Hnswlib package
+find_package(hnswlib REQUIRED)
 
 include(GNUInstallDirs)
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
@@ -31,6 +33,7 @@ endif()
 
 include_directories(
     ${FAISS_INCLUDE_DIRS}
+    ${HNSWLIB_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -60,7 +63,7 @@ target_compile_definitions(latency_client PRIVATE
     LOG_TAG_QUERIES_RESULT_CLIENT_RECEIVED=${LOG_TAG_QUERIES_RESULT_CLIENT_RECEIVED}
 )
 
-set(UDL_COMMON_LIBS derecho derecho::cascade pthread faiss CUDA::cudart)
+set(UDL_COMMON_LIBS derecho derecho::cascade pthread faiss CUDA::cudart hnswlib)
 
 # Centroids_search UDL tags
 set(LOG_BATCH_FAISS_SEARCH_START 30030)
