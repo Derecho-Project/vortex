@@ -1,6 +1,10 @@
 *.pickle
 *.tar
 *.tar.*
+*.zip
 gist/
 miniset/
 hotpot15/
+
+# build folder
+build-*
