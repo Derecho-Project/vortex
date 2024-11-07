@@ -337,16 +337,17 @@ public:
           for(size_t i = 0; i < nq; i++) {
                const float* query_vector = xq + (i * this->emb_dim);
 
-               auto results = this->cpu_hnsw_index->searchKnn(query_vector, top_k);
+               auto results = std::move(this->cpu_hnsw_index->searchKnn(query_vector, top_k));
+               
                for(size_t k = 0; k < top_k; k++) {
                     auto [distance, idx] = results.top();
                     results.pop();
 
                     // populate distance vector which is (n, k)
-                    *(D + (i * this->emb_dim) + k) = distance;
+                    *(D + (i * top_k) + k) = distance;
 
                     // populate index vector which is  also (n, k)
-                    *(I + (i * this->emb_dim) + k) = idx;
+                    *(I + (i * top_k) + k) = idx;
                }
           }
 
