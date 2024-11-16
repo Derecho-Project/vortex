@@ -44,7 +44,7 @@ include_directories(
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
 
-
+link_directories("/root/opt-dev/lib")
 
 # Client log tags
 set(LOG_TAG_QUERIES_SENDING_START 10000)
@@ -70,7 +70,7 @@ target_compile_definitions(latency_client PRIVATE
 add_executable(start_webservice webservice/start_webservice.cpp webservice/webservice.cpp webservice/vortex_webservice.cpp webservice/cascade_client.cpp)
 target_link_libraries(start_webservice ${Boost_LIBRARIES} derecho::cascade)
 
-set(UDL_COMMON_LIBS derecho derecho::cascade pthread faiss CUDA::cudart hnswlib)
+set(UDL_COMMON_LIBS derecho derecho::cascade pthread faiss CUDA::cudart)
 
 # Centroids_search UDL tags
 set(LOG_BATCH_FAISS_SEARCH_START 30030)
