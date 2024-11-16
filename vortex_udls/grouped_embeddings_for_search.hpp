@@ -42,9 +42,11 @@ public:
      int emb_dim;  //  e.g. 512. The dimension of each embedding
      int num_embs;  //  e.g. 1000. The number of embeddings in the array
 
-     // hnsw hyperparamters
-     int M;
-     int EF_CONSTRUCTION;
+     // hnsw hyperparamters: a little jank, modify here
+     // hnswlib looks at these parameters to figure out which prebuilt index to load.
+     const int M = 32;
+     const int EF_CONSTRUCTION = 48;
+     const int EF_SEARCH = 200;
 
      float* embeddings; 
      std::atomic<bool> initialized_index; // Whether the index has been built
@@ -54,6 +56,7 @@ public:
      std::unique_ptr<faiss::gpu::GpuIndexFlatL2> gpu_flatl2_index; // FAISS index object. Initialize if use GPU Flat search
      std::unique_ptr<faiss::gpu::GpuIndexIVFFlat> gpu_ivf_flatl2_index; // FAISS index object. Initialize if use GPU IVF search
      std::unique_ptr<hnswlib::HierarchicalNSW<float>> cpu_hnsw_index; // HNSWLIB index object. Initialize if use hnswlib cpu search 
+     std::unique_ptr<hnswlib::L2Space> l2_space;
 
      std::vector<std::string> query_texts; // query texts list
      std::vector<std::string> query_keys; // query key list 1-1 correspondence with query_texts
@@ -199,6 +202,7 @@ public:
      }   
 
      int initialize_groupped_embeddings_for_search(){
+          std::cerr << "Initializing for" << (int)this->search_type << std::endl;
           switch (this->search_type) {
           case SearchType::FaissCpuFlatSearch:
                initialize_cpu_flat_search();
@@ -210,7 +214,7 @@ public:
                initialize_gpu_ivf_flat_search();
                return 0;
           case SearchType::HnswlibCpuSearch:
-               initialize_cpu_flat_search();
+               initialize_cpu_hnsw_search();
                return 0;
           default:
                std::cerr << "Error: faiss_search_type not supported" << std::endl;
@@ -219,7 +223,6 @@ public:
           }
           initialized_index.store(true);
           return 0;
-
      }
 
      /***
@@ -326,8 +329,8 @@ public:
      }
 
      void initialize_cpu_hnsw_search() {
-          hnswlib::L2Space l2_space(this->emb_dim);
-          this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(&l2_space, this->num_embs, M, EF_CONSTRUCTION);
+          this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
+          this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, M, EF_CONSTRUCTION);
 
           for(size_t i = 0; i < this->num_embs; i++) {
                this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
@@ -338,7 +341,7 @@ public:
                const float* query_vector = xq + (i * this->emb_dim);
 
                auto results = std::move(this->cpu_hnsw_index->searchKnn(query_vector, top_k));
-               
+
                for(size_t k = 0; k < top_k; k++) {
                     auto [distance, idx] = results.top();
                     results.pop();
