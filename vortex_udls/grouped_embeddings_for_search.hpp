@@ -21,7 +21,6 @@
 #include <hnswlib/hnswlib.h>
 
 #include "serialize_utils.hpp"
-#include "rag_utils.hpp"
 
 #define MAX_NUM_QUERIES_PER_BATCH 1000
 

@@ -153,6 +153,7 @@ void CentroidsSearchOCDPO::ProcessBatchedTasksThread::process_task(std::unique_p
         TimestampLogger::log(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_START,task_ptr->client_id,task_ptr->query_batch_id,pair.first);
 
         typed_ctxt->get_service_client_ref().put_and_forget<VolatileCascadeStoreWithStringKey>(obj, NEXT_UDL_SUBGROUP_ID, static_cast<uint32_t>(pair.first), true); // TODO: change this hard-coded subgroup_id
+        std::cout << "I'm here: " << obj.key << " " << NEXT_UDL_SUBGROUP_ID << " shard: " << pair.first << std::endl;
         TimestampLogger::log(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_END,task_ptr->client_id,task_ptr->query_batch_id,pair.first);
         dbg_default_trace("[Centroids search ocdpo]: Emitted key: {}",new_key);
     }
