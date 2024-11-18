@@ -205,7 +205,9 @@ int VortexPerfClient::register_notification_on_all_servers(ServiceClientAPI& cap
 
 bool VortexPerfClient::run_perf_test(ServiceClientAPI& capi,const std::vector<std::string>& queries, const std::unique_ptr<float[]>& query_embs){
      // 1. send the queries to the cascade
-     for (int batch_id = 0; batch_id < this->num_queries; batch_id++) {
+     // minimum number of batches needed to reach at least this->num_queries queries.
+     int number_batches = (this->num_queries + this ->batch_size - 1) / this->batch_size;
+     for (int batch_id = 0; batch_id < number_batches; batch_id++) {
           std::string key = "/rag/emb/centroids_search/client" + std::to_string(this->my_node_id) + "/qb" + std::to_string(batch_id);
           // 1.1. Prepare the query texts
           std::vector<std::string> cur_query_list;
