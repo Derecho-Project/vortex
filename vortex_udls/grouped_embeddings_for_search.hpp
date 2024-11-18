@@ -76,7 +76,7 @@ public:
      }
 
      GroupedEmbeddingsForSearch(int dim, int num, float* data) 
-          : search_type(static_cast<SearchType>(dim)), emb_dim(dim), num_embs(num), embeddings(data), added_query_offset(0), query_embs_in_search(false) {
+          : search_type(SearchType::FaissCpuFlatSearch), emb_dim(dim), num_embs(num), embeddings(data), added_query_offset(0), query_embs_in_search(false) {
           query_embs = new float[dim * MAX_NUM_QUERIES_PER_BATCH];
           initialized_index.store(false);
      }
@@ -201,20 +201,19 @@ public:
      }   
 
      int initialize_groupped_embeddings_for_search(){
-          std::cerr << "Initializing for" << (int)this->search_type << std::endl;
           switch (this->search_type) {
           case SearchType::FaissCpuFlatSearch:
                initialize_cpu_flat_search();
-               return 0;
+               break;
           case SearchType::FaissGpuFlatSearch:
                initialize_gpu_flat_search();
-               return 0;
+               break;
           case SearchType::FaissGpuIvfSearch:
                initialize_gpu_ivf_flat_search();
-               return 0;
+               break;
           case SearchType::HnswlibCpuSearch:
                initialize_cpu_hnsw_search();
-               return 0;
+               break;
           default:
                std::cerr << "Error: faiss_search_type not supported" << std::endl;
                dbg_default_error("Failed to initialize faiss search type, at clusters_search_udl.");
