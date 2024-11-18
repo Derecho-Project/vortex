@@ -49,7 +49,7 @@ class VortexPerfClient{
      std::unordered_map<std::string, std::vector<std::tuple<uint32_t,uint32_t>>> sent_queries;
      std::unordered_map<std::string, std::vector<std::string>> query_results; 
      std::atomic<bool> running;
-     std::atomic<int> num_queries_to_send;
+     std::atomic<bool> has_sent_all_queries;
 
 public:
      VortexPerfClient(int node_id, int num_queries, int batch_size, int query_interval, int emb_dim, bool only_send_query_text);

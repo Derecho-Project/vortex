@@ -6,7 +6,7 @@ VortexPerfClient::VortexPerfClient(int node_id, int num_queries, int batch_size,
                                    batch_size(batch_size), query_interval(query_interval), 
                                    embedding_dim(emb_dim), only_send_query_text(only_send_query_text) {
      this->running.store(true);
-     this->num_queries_to_send.store(this->num_queries*this->batch_size);
+     this->has_sent_all_queries.store(false);
 }
 
 
@@ -175,7 +175,7 @@ int VortexPerfClient::register_notification_on_all_servers(ServiceClientAPI& cap
                               std::cerr << "Error: received result for query that is not sent." << std::endl;
                          }
                     }
-                    if (this->sent_queries.size() == 0 && num_queries_to_send.load() == 0) {
+                    if (this->sent_queries.size() == 0 && this->has_sent_all_queries.load()) {
                          this->running = false;
                          std::cout << "Received all results. Set running to false" << std::endl;
                     }
@@ -249,12 +249,12 @@ bool VortexPerfClient::run_perf_test(ServiceClientAPI& capi,const std::vector<st
           for (int j = 0; j < this->batch_size; ++j) {
                TimestampLogger::log(LOG_TAG_QUERIES_SENDING_END,this->my_node_id,batch_id,j);
           }
-          num_queries_to_send -= this->batch_size;
           std::this_thread::sleep_for(std::chrono::microseconds(this->query_interval)); // TODO
           if (batch_id % 200 == 0) {
                std::cout << "Sent " << batch_id << " queries." << std::endl;
           }
      }
+     this->has_sent_all_queries.store(true);
      
      std::cout << "Put all queries to cascade." << std::endl;
 
