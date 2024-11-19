@@ -71,6 +71,7 @@ inline void ParallelFor(size_t start, size_t end, size_t numThreads, Function fn
                 auto remaining_time = static_cast<int>(static_cast<double>(end - curr) / (static_cast<double>(it_per_s) + 0.001));
 
                 fprintf(stdout, "[%7.2f] remaining time = %5ds, elapsed = %5lds  \r", (progress * 100), remaining_time, time_elapsed);
+                fflush(stdout);
             }
         };
         std::thread progress(printer);
