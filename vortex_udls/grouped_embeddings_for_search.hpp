@@ -46,6 +46,7 @@ public:
      const int M = 32;
      const int EF_CONSTRUCTION = 48;
      const int EF_SEARCH = 200;
+     const std::string dataset_name {""};
 
      float* embeddings; 
      std::atomic<bool> initialized_index; // Whether the index has been built
@@ -71,6 +72,12 @@ public:
 
      GroupedEmbeddingsForSearch(int type, int dim) 
           : search_type(static_cast<SearchType>(type)), emb_dim(dim), num_embs(0), embeddings(nullptr),added_query_offset(0), query_embs_in_search(false) {
+          query_embs = new float[dim * MAX_NUM_QUERIES_PER_BATCH];
+          initialized_index.store(false);
+     }
+
+     GroupedEmbeddingsForSearch(int type, int dim, const std::string& hnsw_dataset_name) 
+          : search_type(static_cast<SearchType>(type)), emb_dim(dim), num_embs(0), dataset_name(hnsw_dataset_name), embeddings(nullptr),added_query_offset(0), query_embs_in_search(false) {
           query_embs = new float[dim * MAX_NUM_QUERIES_PER_BATCH];
           initialized_index.store(false);
      }
@@ -200,7 +207,7 @@ public:
           return this->num_embs;
      }   
 
-     int initialize_groupped_embeddings_for_search(){
+     int initialize_groupped_embeddings_for_search(int cluster_id = -1){
           switch (this->search_type) {
           case SearchType::FaissCpuFlatSearch:
                initialize_cpu_flat_search();
@@ -212,7 +219,7 @@ public:
                initialize_gpu_ivf_flat_search();
                break;
           case SearchType::HnswlibCpuSearch:
-               initialize_cpu_hnsw_search();
+               initialize_cpu_hnsw_search(cluster_id);
                break;
           default:
                std::cerr << "Error: faiss_search_type not supported" << std::endl;
@@ -326,10 +333,11 @@ public:
           }
      }
 
-     void initialize_cpu_hnsw_search() {
+     void initialize_cpu_hnsw_search(int cluster_id) {
           this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
           this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, M, EF_CONSTRUCTION);
-
+          
+          fs::path 
           for(size_t i = 0; i < this->num_embs; i++) {
                this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
           }

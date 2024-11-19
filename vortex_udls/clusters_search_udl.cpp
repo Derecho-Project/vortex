@@ -115,7 +115,7 @@ bool ClustersSearchOCDPO::ClusterSearchWorker::check_and_retrieve_cluster_index(
         dbg_default_error("Failed to fill the cluster embeddings in cache, at clusters_search_udl.");
         return false;
     }
-    int initialized = parent->cluster_search_index->initialize_groupped_embeddings_for_search();
+    int initialized = parent->cluster_search_index->initialize_groupped_embeddings_for_search(this->cluster_id);
     if (initialized == -1) {
         std::cerr << "Error: failed to initialize the index for the cluster embeddings" << std::endl;
         dbg_default_error("Failed to initialize the index for the cluster embeddings, at clusters_search_udl.");
@@ -317,11 +317,14 @@ void ClustersSearchOCDPO::set_config(DefaultCascadeContextType* typed_ctxt, cons
         if (config.contains("faiss_search_type")) {
             this->faiss_search_type = config["faiss_search_type"].get<int>();
         }
+        if (config.contains("dataset_name")) {
+            this->dataset_name = config["dataset_name"].get<std::string>();
+        }
     } catch (const std::exception& e) {
         std::cerr << "Error: failed to convert emb_dim or top_k from config" << std::endl;
         dbg_default_error("Failed to convert emb_dim or top_k from config, at clusters_search_udl.");
     }
-    this->cluster_search_index = std::make_shared<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim);
+    this->cluster_search_index = std::make_shared<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim, this->dataset_name);
     this->start_threads(typed_ctxt);
 }
 

@@ -109,6 +109,7 @@ class ClustersSearchOCDPO: public DefaultOffCriticalDataPathObserver {
     int emb_dim = 64; // dimension of each embedding
     uint32_t top_k = 4; // number of top K embeddings to search
     int faiss_search_type = 0; // 0: CPU flat search, 1: GPU flat search, 2: GPU IVF search
+    std::string dataset_name {""};
     int my_id; // the node id of this node; logging purpose
     uint32_t batch_time_us=1000; // the time interval to process the batch of queries
     uint32_t batch_min_size=0; // min number queries to process in each batch
