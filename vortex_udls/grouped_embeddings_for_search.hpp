@@ -43,8 +43,9 @@ public:
 
      // hnsw hyperparamters: a little jank, modify here
      // hnswlib looks at these parameters to figure out which prebuilt index to load.
-     const int M = 32;
-     const int EF_CONSTRUCTION = 48;
+     // TODO: have it read dfg value
+     const int M = 100;
+     const int EF_CONSTRUCTION = 2000;
      const int EF_SEARCH = 200;
      const std::string dataset_name {""};
 
@@ -334,13 +335,22 @@ public:
      }
 
      void initialize_cpu_hnsw_search(int cluster_id) {
-          this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
-          this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, M, EF_CONSTRUCTION);
-          
-          fs::path 
-          for(size_t i = 0; i < this->num_embs; i++) {
-               this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
+
+          const fs::path prebuilt_indicies = fs::path("hnsw_index") / this->dataset_name;
+          const fs::path cluster_file = prebuilt_indicies / ("hnsw_m_" + std::to_string(M) + "_ef_" + std::to_string(EF_CONSTRUCTION) + "_cluster_" + std::to_string(cluster_id) + ".bin");
+          if (!this->dataset_name.empty() && fs::exists(cluster_file) ) {
+               dbg_default_trace("Loading prebuilt index: {}", cluster_file.string());
+               this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
+               this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), cluster_file);
+          } else {
+               dbg_default_trace("Could not find prebuilt index: {}, manually building now", cluster_file.string());
+               this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
+               this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, M, EF_CONSTRUCTION);
+               for(size_t i = 0; i < this->num_embs; i++) {
+                    this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
+               }
           }
+          this->cpu_hnsw_index->setEf(this->EF_SEARCH);
      }
      int hnsw_cpu_search(int nq, float* xq, int top_k, float* D, long* I)  {
           for(size_t i = 0; i < nq; i++) {
