@@ -36,7 +36,7 @@ dimension = base.shape[1]  # Assumes emb_list is a 2D array (num_embeddings, emb
 print("Dimension:", dimension)
 
 # Balanced K-Means Clustering
-niter = 5  # Increased iterations for better convergence
+niter = 20  # Increased iterations for better convergence
 verbose = True
 d = base.shape[1]
 
@@ -52,7 +52,7 @@ kmeans = KMeansConstrained(
     size_min=min_size,
     size_max=max_size,
     init='k-means++',
-    n_init=2,
+    n_init=5,
     max_iter=niter,
     verbose=verbose,
     random_state=42
