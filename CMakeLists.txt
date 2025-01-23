@@ -16,8 +16,7 @@ find_package(cascade CONFIG REQUIRED)
 find_package(Faiss REQUIRED)
 # Find CUDA Toolkit if using Faiss with GPU support
 find_package(CUDAToolkit REQUIRED)
-# Find Hnswlib package
-find_package(hnswlib REQUIRED)
+
 
 # Boost
 find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
@@ -38,13 +37,13 @@ endif()
 include_directories(
     ${FAISS_INCLUDE_DIRS}
     ${HNSWLIB_INCLUDE_DIRS}
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
 
 link_directories("/root/opt-dev/lib")
+
+
 
 # Client log tags
 set(LOG_TAG_QUERIES_SENDING_START 10000)
@@ -66,127 +65,14 @@ target_compile_definitions(run_benchmark PRIVATE
 add_executable(start_webservice webservice/start_webservice.cpp webservice/webservice.cpp webservice/vortex_webservice.cpp webservice/cascade_client.cpp vortex_udls/serialize_utils.cpp)
 target_link_libraries(start_webservice ${Boost_LIBRARIES} derecho::cascade)
 
-set(UDL_COMMON_LIBS derecho derecho::cascade pthread faiss CUDA::cudart)
 
-# Centroids_search UDL tags
-set(LOG_BATCH_FAISS_SEARCH_START 30030)
-set(LOG_BATCH_FAISS_SEARCH_END 30031)
-set(LOG_BATCH_FAISS_SEARCH_SIZE 30032)
+add_subdirectory(vortex_udls)
 
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_START 20000)
-set(LOG_CENTROIDS_EMBEDDINGS_LOADING_START 20010)
-set(LOG_CENTROIDS_EMBEDDINGS_LOADING_END 20011)
-set(LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_START 20020)
-set(LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_END 20021)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_START 20030)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_END 20031)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_COMBINE_END 20041)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_START 20050)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_END 20051)
-set(LOG_CENTROIDS_EMBEDDINGS_UDL_END 20100)
-
-
-# Cluster Search tags
-set(LOG_CLUSTER_SEARCH_UDL_START 30000)
-set(LOG_CLUSTER_SEARCH_UDL_LOADEMB_START 30010)
-set(LOG_CLUSTER_SEARCH_UDL_LOADEMB_END 30011)
-set(LOG_CLUSTER_SEARCH_DESERIALIZE_START 30020)
-set(LOG_CLUSTER_SEARCH_DESERIALIZE_END 30021)
-set(LOG_CLUSTER_SEARCH_ADDED_TOBATCH 30022)
-set(LOG_CLUSTER_SEARCH_CONSTRUCT_KEYS_END 30041)
-set(LOG_CLUSTER_SEARCH_UDL_EMIT_START 30050)
-
-
-add_library(centroids_search_udl SHARED
-                            vortex_udls/centroids_search_udl.hpp 
-                            vortex_udls/centroids_search_udl.cpp 
-                            vortex_udls/serialize_utils.cpp 
-                            vortex_udls/grouped_embeddings_for_search.cpp
-                            vortex_udls/api_utils.cpp)
-target_link_libraries(centroids_search_udl PRIVATE ${UDL_COMMON_LIBS})
-target_compile_definitions(centroids_search_udl PRIVATE
-    LOG_CENTROIDS_EMBEDDINGS_UDL_START=${LOG_CENTROIDS_EMBEDDINGS_UDL_START}
-    LOG_CENTROIDS_EMBEDDINGS_LOADING_START=${LOG_CENTROIDS_EMBEDDINGS_LOADING_START}
-    LOG_CENTROIDS_EMBEDDINGS_LOADING_END=${LOG_CENTROIDS_EMBEDDINGS_LOADING_END}
-    LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_START=${LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_START}
-    LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_END=${LOG_CENTROIDS_SEARCH_PREPARE_EMBEDDINGS_END}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_START=${LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_START}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_END=${LOG_CENTROIDS_EMBEDDINGS_UDL_SEARCH_END}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_COMBINE_END=${LOG_CENTROIDS_EMBEDDINGS_UDL_COMBINE_END}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_START=${LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_START}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_END=${LOG_CENTROIDS_EMBEDDINGS_UDL_EMIT_END}
-    LOG_CENTROIDS_EMBEDDINGS_UDL_END=${LOG_CENTROIDS_EMBEDDINGS_UDL_END}
-    LOG_BATCH_FAISS_SEARCH_SIZE=${LOG_BATCH_FAISS_SEARCH_SIZE}
-    LOG_BATCH_FAISS_SEARCH_START=${LOG_BATCH_FAISS_SEARCH_START}
-    LOG_BATCH_FAISS_SEARCH_END=${LOG_BATCH_FAISS_SEARCH_END}
-)
-
-
-add_library(clusters_search_udl SHARED 
-                                vortex_udls/clusters_search_udl.hpp 
-                                vortex_udls/clusters_search_udl.cpp 
-                                vortex_udls/grouped_embeddings_for_search.cpp
-                                vortex_udls/serialize_utils.cpp)
-target_link_libraries(clusters_search_udl PRIVATE ${UDL_COMMON_LIBS})
-
-target_compile_definitions(clusters_search_udl PRIVATE
-    LOG_CLUSTER_SEARCH_UDL_START=${LOG_CLUSTER_SEARCH_UDL_START}
-    LOG_CLUSTER_SEARCH_UDL_LOADEMB_START=${LOG_CLUSTER_SEARCH_UDL_LOADEMB_START}
-    LOG_CLUSTER_SEARCH_UDL_LOADEMB_END=${LOG_CLUSTER_SEARCH_UDL_LOADEMB_END}
-    LOG_CLUSTER_SEARCH_DESERIALIZE_START=${LOG_CLUSTER_SEARCH_DESERIALIZE_START}
-    LOG_CLUSTER_SEARCH_DESERIALIZE_END=${LOG_CLUSTER_SEARCH_DESERIALIZE_END}
-    LOG_CLUSTER_SEARCH_ADDED_TOBATCH=${LOG_CLUSTER_SEARCH_ADDED_TOBATCH}
-    LOG_BATCH_FAISS_SEARCH_START=${LOG_BATCH_FAISS_SEARCH_START}
-    LOG_BATCH_FAISS_SEARCH_END=${LOG_BATCH_FAISS_SEARCH_END}
-    LOG_BATCH_FAISS_SEARCH_SIZE=${LOG_BATCH_FAISS_SEARCH_SIZE}
-    LOG_CLUSTER_SEARCH_CONSTRUCT_KEYS_END=${LOG_CLUSTER_SEARCH_CONSTRUCT_KEYS_END}
-    LOG_CLUSTER_SEARCH_UDL_EMIT_START=${LOG_CLUSTER_SEARCH_UDL_EMIT_START}
-)
-
-# AGG GENERATE UDL tags
-set(LOG_TAG_AGG_UDL_START 40000)
-set(LOG_TAG_AGG_UDL_FINISHED_DESERIALIZE 40001)
-set(LOG_TAG_AGG_UDL_END_NOT_FULLY_GATHERED 40010)
-set(LOG_TAG_AGG_UDL_QUERY_FINISHED_GATHERED 40011)
-set(LOG_TAG_AGG_UDL_RETRIEVE_DOC_START 40020)
-set(LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_START 40120)
-set(LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_END 40121)
-set(LOG_TAG_AGG_UDL_LOAD_DOC_START 40220)
-set(LOG_TAG_AGG_UDL_LOAD_DOC_END 40221)
-set(LOG_TAG_AGG_UDL_RETRIEVE_DOC_END 40021)
-set(LOG_TAG_AGG_UDL_PUT_RESULT_START 40030)
-set(LOG_TAG_AGG_UDL_PUT_RESULT_END 40031)
-set(LOG_TAG_AGG_UDL_END 40100)
-
-
-add_library(aggregate_generate_udl SHARED 
-            vortex_udls/aggregate_generate_udl.hpp 
-            vortex_udls/aggregate_generate_udl.cpp 
-            vortex_udls/serialize_utils.cpp 
-            vortex_udls/api_utils.cpp)
-target_link_libraries(aggregate_generate_udl PRIVATE derecho::cascade)
-
-target_compile_definitions(aggregate_generate_udl PRIVATE
-    LOG_TAG_AGG_UDL_END=${LOG_TAG_AGG_UDL_END}
-    LOG_TAG_AGG_UDL_START=${LOG_TAG_AGG_UDL_START}
-    LOG_TAG_AGG_UDL_FINISHED_DESERIALIZE=${LOG_TAG_AGG_UDL_FINISHED_DESERIALIZE}
-    LOG_TAG_AGG_UDL_END_NOT_FULLY_GATHERED=${LOG_TAG_AGG_UDL_END_NOT_FULLY_GATHERED}
-    LOG_TAG_AGG_UDL_QUERY_FINISHED_GATHERED=${LOG_TAG_AGG_UDL_QUERY_FINISHED_GATHERED}
-    LOG_TAG_AGG_UDL_RETRIEVE_DOC_START=${LOG_TAG_AGG_UDL_RETRIEVE_DOC_START}
-    LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_START=${LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_START}
-    LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_END=${LOG_TAG_AGG_UDL_LOAD_EMB_DOC_MAP_END}
-    LOG_TAG_AGG_UDL_LOAD_DOC_START=${LOG_TAG_AGG_UDL_LOAD_DOC_START}
-    LOG_TAG_AGG_UDL_LOAD_DOC_END=${LOG_TAG_AGG_UDL_LOAD_DOC_END}
-    LOG_TAG_AGG_UDL_RETRIEVE_DOC_END=${LOG_TAG_AGG_UDL_RETRIEVE_DOC_END}
-    LOG_TAG_AGG_UDL_PUT_RESULT_START=${LOG_TAG_AGG_UDL_PUT_RESULT_START}
-    LOG_TAG_AGG_UDL_PUT_RESULT_END=${LOG_TAG_AGG_UDL_PUT_RESULT_END}
-    LOG_FAISS_SEARCH_BATCH_SIZE=${LOG_FAISS_SEARCH_BATCH_SIZE}
-    LOG_TAG_AGG_UDL_END=${LOG_TAG_AGG_UDL_END}
-)
-
-add_custom_command(TARGET aggregate_generate_udl POST_BUILD
+add_custom_command(TARGET start_webservice POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/cfg
         ${CMAKE_CURRENT_BINARY_DIR}/cfg
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/vortex_udls/python/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/vortex_udls/python/python_udls
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/perf_data
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/perf_data
         ${CMAKE_CURRENT_BINARY_DIR}/perf_data
@@ -222,6 +108,18 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/udl_dlls.cfg
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/vortex_udls/python/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/python_udls
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n1/python_udls
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/python_udls
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/python_udls
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/python_udls
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/python_udls
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/clear_log.sh 
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
@@ -266,5 +164,6 @@ add_custom_command(TARGET aggregate_generate_udl POST_BUILD
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/dfgs.json.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/udl_dlls.cfg.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/client_query.py
-    COMMENT "prepare cluster search configuration"
+    COMMENT "prepare vortex udls and group configuration"
 )
+

@@ -1,3 +1,4 @@
-../../libcentroids_search_udl.so
-../../libclusters_search_udl.so
-../../libaggregate_generate_udl.so
+../../vortex_udls/libcentroids_search_udl.so
+../../vortex_udls/libclusters_search_udl.so
+../../vortex_udls/libaggregate_generate_udl.so
+../../vortex_udls/libpython_udl_manager.so
