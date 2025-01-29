@@ -279,7 +279,7 @@ bool ClustersSearchOCDPO::check_and_retrieve_cluster_index(DefaultCascadeContext
         dbg_default_error("Failed to fill the cluster embeddings in cache, at clusters_search_udl.");
         return false;
     }
-    int initialized = cluster_search_index->initialize_groupped_embeddings_for_search();
+    int initialized = cluster_search_index->initialize_groupped_embeddings_for_search(this->cluster_id);
     if (initialized == -1) {
         std::cerr << "Error: failed to initialize the index for the cluster embeddings" << std::endl;
         dbg_default_error("Failed to initialize the index for the cluster embeddings, at clusters_search_udl.");
@@ -349,6 +349,7 @@ void ClustersSearchOCDPO::start_threads(DefaultCascadeContextType* typed_ctxt) {
 
 void ClustersSearchOCDPO::set_config(DefaultCascadeContextType* typed_ctxt, const nlohmann::json& config){
     this->my_id = typed_ctxt->get_service_client_ref().get_my_id();
+    HNSWConfig hnsw_config;
     try{
         if (config.contains("emb_dim")) {
             this->emb_dim = config["emb_dim"].get<int>();
@@ -358,6 +359,18 @@ void ClustersSearchOCDPO::set_config(DefaultCascadeContextType* typed_ctxt, cons
         }
         if (config.contains("faiss_search_type")) {
             this->faiss_search_type = config["faiss_search_type"].get<int>();
+        } 
+        if (config.contains("dataset_name")) {
+            hnsw_config.dataset_name = config["dataset_name"].get<std::string>();
+        }
+        if (config.contains("hnsw_m")) {
+            hnsw_config.m = config["hnsw_m"].get<int>();
+        }
+        if (config.contains("hnsw_ef_construction")) {
+            hnsw_config.ef_construction = config["hnsw_ef_construction"].get<int>();
+        }
+        if (config.contains("hnsw_ef_search")) {
+            hnsw_config.ef_search = config["hnsw_ef_search"].get<int>();
         }
         if (config.contains("batch_time_us")) {
             this->batch_time_us = config["batch_time_us"].get<uint32_t>();
@@ -379,7 +392,7 @@ void ClustersSearchOCDPO::set_config(DefaultCascadeContextType* typed_ctxt, cons
         std::cerr << "Error: failed to convert emb_dim or top_k from config" << std::endl;
         dbg_default_error("Failed to convert emb_dim or top_k from config, at clusters_search_udl.");
     }
-    this->cluster_search_index = std::make_shared<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim);
+    this->cluster_search_index = std::make_shared<GroupedEmbeddingsForSearch>(this->faiss_search_type, this->emb_dim, hnsw_config);
     this->start_threads(typed_ctxt);
 }
 

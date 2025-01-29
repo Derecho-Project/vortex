@@ -76,7 +76,36 @@ For miniset, hotpot15, ``` emb_dim: 1024``` for the first two UDLs, and ```retri
 
 For GIST dataset, ``` emb_dim: 960``` for the first two UDLs, and ```retrieve_docs:false``` for the third UDL.
 
-#### 4.2. Initialize database
+#### 4.2 Prebuild Indices for HNSW
+Building HNSW indices take a long time. Vortex allows one to load prebuilt indices. It will look under the `benchmark/hnsw_index/` directory
+
+**Building Indicies**
+
+1. Locate the dataset folder under `benchmark/perf_data`. The dataset folder should container a `centroids.pkl` file and multiple `cluster_*.pkl` files.
+2. If those two files do not exist as in the case of the gist dataset, run `format_gist.py`
+3. If the dataset is called miniset, then the build command will look like `./build-Release/build_hnsw_index benchmark/perf_data/miniset benchmark/hnsw_index/miniset -m 100, 200 -e 200, 500`
+
+
+**Loading Indicies**
+
+To configure the cluster search udl to load the correct dataset when using hnsw, configure the `faiss_search_type` to 3 and `dataset_name` to match the name of the folder in benchmark/hnsw_index.
+
+```
+"user_defined_logic_config_list": [
+{
+      "emb_dim":1024,
+      "top_k":3,
+      "faiss_search_type":3,
+      "dataset_name": "miniset",    // tries to look in benchmark/hnsw_index/miniset
+      "hnsw_m": 48,                 // hnsw graph connectedness
+      "hnsw_ef_construction": 100,  // hnsw exploration factor for construction
+      "hnsw_ef_search:" 100         // hnsw exploration factor for search
+}],
+```
+
+Note: the code looks at M, EF_CONSTRUCTION, and EF_SEARCH in `groupped_embeddings_for_search.hpp` to try and load the correct prebuilt index.
+
+#### 4.3. Initialize database
 The initialization step is to put the embeddings and documents to store in Cascade and use at query runtime. We provided a scrip that puts centroids' and clusters' embeddings, documents, and embedding-to-document-pathname map into Cascade. 
 
 You can run ```python setup/perf_test_setup.py -p <dataset_directory> -e <embedding_dimension> [-doc]```. The ```<dataset_directory>``` could be either ```perf_data/miniset``` (embedding dimension 1024) or ```perf_data/hotpot15``` (embedding dimension 1024) or ```perf_data/gist``` (embedding dimension 960) depends on the scale of the experiment. For gist dataset, it doesn't contain document, but for the other two, could include -doc in the script to have it also put doc text into cascade .

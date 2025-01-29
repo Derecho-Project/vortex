@@ -225,7 +225,7 @@ int GroupedEmbeddingsForSearch::get_num_embeddings(){
      return this->num_embs;
 }   
 
-int GroupedEmbeddingsForSearch::initialize_groupped_embeddings_for_search(){
+int GroupedEmbeddingsForSearch::initialize_groupped_embeddings_for_search(int cluster_id){
      switch (this->search_type) {
      case SearchType::FaissCpuFlatSearch:
           initialize_cpu_flat_search();
@@ -237,7 +237,7 @@ int GroupedEmbeddingsForSearch::initialize_groupped_embeddings_for_search(){
           initialize_gpu_ivf_flat_search();
           break;
      case SearchType::HnswlibCpuSearch:
-          initialize_cpu_hnsw_search();
+          initialize_cpu_hnsw_search(cluster_id);
           break;
      default:
           std::cerr << "Error: faiss_search_type not supported" << std::endl;
@@ -269,13 +269,30 @@ void GroupedEmbeddingsForSearch::search(int nq, const float* xq, int top_k, floa
      }
 }
 
-void GroupedEmbeddingsForSearch::initialize_cpu_hnsw_search() {
-     this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
-     this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, M, EF_CONSTRUCTION);
+void GroupedEmbeddingsForSearch::initialize_cpu_hnsw_search(int cluster_id) {
+     const std::string &name = this->hnsw_config.dataset_name;
+     const int& m = this->hnsw_config.m;
+     const int& ef = this->hnsw_config.ef_construction;
+     const int& ef_search = this->hnsw_config.ef_search;
 
-     for(size_t i = 0; i < this->num_embs; i++) {
-          this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
+     const fs::path prebuilt_indices = fs::path("hnsw_index") / name;
+     const fs::path cluster_file = prebuilt_indices / 
+          ("hnsw_m_" + std::to_string(m) + "_ef_" + std::to_string(ef) + "_cluster_" + std::to_string(cluster_id) + ".bin");
+     
+     if (!name.empty() && fs::exists(cluster_file)) {
+          dbg_default_info("Loading prebuilt index: {}", cluster_file.string());
+          this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
+          this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), cluster_file);
+     } else {
+          this->l2_space = std::make_unique<hnswlib::L2Space>(this->emb_dim);
+          this->cpu_hnsw_index = std::make_unique<hnswlib::HierarchicalNSW<float>>(l2_space.get(), this->num_embs, m, ef);
+
+          for(size_t i = 0; i < this->num_embs; i++) {
+               this->cpu_hnsw_index->addPoint(this->embeddings + (i * this->emb_dim), i);
+          }
      }
+
+     this->cpu_hnsw_index->setEf(ef_search);
 }
 
 int GroupedEmbeddingsForSearch::hnsw_cpu_search(int nq, const float* xq, int top_k, float* D, long* I)  {

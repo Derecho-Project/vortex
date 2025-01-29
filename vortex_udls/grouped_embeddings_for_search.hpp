@@ -28,6 +28,17 @@ namespace cascade{
 
 constexpr size_t CACHE_LINE_SIZE = 64;
 
+/**
+ * This struct is used to store HNSW configuration used to either load prebuilt indicies
+ * or build indicies during runtime.
+ */
+struct HNSWConfig {
+    std::string dataset_name {""}; // name of the dataset, used by hnsw to determine which prebuilt index to load
+    int m {48};                    // controls how dense the graph is, higher --> denser
+    int ef_construction {200};     // how many neighbors are checked when adding a new point (should be > top_k)
+    int ef_search {200};           // how many neighbors are explored to find the closest match  (should be > top_k)
+};
+
 /*
  * This class is responsible for holding a batch of queries to be processed in a memory-efficient way.
  */
@@ -75,11 +86,10 @@ public:
      int emb_dim;  //  e.g. 512. The dimension of each embedding
      int num_embs;  //  e.g. 1000. The number of embeddings in the array
 
-     // hnsw hyperparamters: a little jank, modify here
-     // hnswlib looks at these parameters to figure out which prebuilt index to load.
-     const int M = 32;
-     const int EF_CONSTRUCTION = 48;
-     const int EF_SEARCH = 200;
+     // hnsw hyperparamters: looks at `hnsw_m` `
+     // hnswlib looks at these parameters to figure out which prebuilt index to load if any,
+     // or what hyperparameters are used to build/search
+     const HNSWConfig hnsw_config;
 
      float* embeddings; 
      std::atomic<bool> initialized_index; // Whether the index has been built
@@ -92,6 +102,11 @@ public:
      std::unique_ptr<hnswlib::L2Space> l2_space;
 
 
+
+     GroupedEmbeddingsForSearch(int type, int dim, HNSWConfig hnsw_config)
+          :search_type(static_cast<SearchType>(type)), emb_dim(dim), num_embs(0), embeddings(nullptr), hnsw_config(hnsw_config) {
+          initialized_index.store(false);
+     }
 
      GroupedEmbeddingsForSearch(int type, int dim) 
           : search_type(static_cast<SearchType>(type)), emb_dim(dim), num_embs(0), embeddings(nullptr) {
@@ -148,7 +163,7 @@ public:
 
      int get_num_embeddings(); 
 
-     int initialize_groupped_embeddings_for_search();
+     int initialize_groupped_embeddings_for_search(int cluster_id = 0);
 
      /***
       * Search the top K embeddings that are close to one query
@@ -160,7 +175,7 @@ public:
       */
      void search(int nq, const float* xq, int top_k, float* D, long* I);
 
-     void initialize_cpu_hnsw_search();
+     void initialize_cpu_hnsw_search(int cluster_id);
 
      int hnsw_cpu_search(int nq, const float* xq, int top_k, float* D, long* I);
 
