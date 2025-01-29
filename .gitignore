@@ -8,3 +8,6 @@ hotpot15/
 
 # build folder
 build-*
+
+# ignore prebuilt hnsw indicies
+benchmark/setup/hnsw_index/
