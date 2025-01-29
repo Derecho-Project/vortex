@@ -103,7 +103,7 @@ To configure the cluster search udl to load the correct dataset when using hnsw,
 }],
 ```
 
-Note: the code looks at M, EF_CONSTRUCTION, and EF_SEARCH in `grouped_embeddings_for_search.hpp` to try and load the correct prebuilt index.
+Note: the code looks at M, EF_CONSTRUCTION, and EF_SEARCH in `groupped_embeddings_for_search.hpp` to try and load the correct prebuilt index.
 
 #### 4.3. Initialize database
 The initialization step is to put the embeddings and documents to store in Cascade and use at query runtime. We provided a scrip that puts centroids' and clusters' embeddings, documents, and embedding-to-document-pathname map into Cascade. 
