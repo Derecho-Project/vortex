@@ -1,0 +1,12 @@
+services:
+  vortex:
+    image: yy354/rag_dev:v1.0
+    build:
+      dockerfile: Dockerfile
+    runtime: nvidia
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    volumes:
+      # mount current directory into vortex user
+      - ./:/home/vortexuser/workspace/vortex:rwx
+    entrypoint: sleep infinity

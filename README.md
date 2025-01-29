@@ -94,9 +94,8 @@ e.g. ```./latency_client  -q perf_data/miniset -e 1024 -n <num_requests> -b <bat
 ```./latency_client  -q perf_data/gist -e 960 -n <num_requests> -b <batch_size> -i <interval_between_request>```
 
 
-
-
 ## Docker image
-We have built a docker image that have nvcc, cascade,derecho, FAISS built and installed. You can pull from the docker image and run it on your environment.
+We have provided a development docker image that has nvcc, cascade, derecho, FAISS built and installed. Run `docker compose up -d`
+to launch the image. Alternatively, you can run `docker compose up --build -d` to build the image locally.
 
-Image name: yy354/rag_dev:v1.0
+To stop the container, run `docker compose down`
