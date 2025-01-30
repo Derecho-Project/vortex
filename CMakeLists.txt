@@ -50,8 +50,8 @@ set(LOG_TAG_QUERIES_SENDING_START 10000)
 set(LOG_TAG_QUERIES_SENDING_END 10001)
 set(LOG_TAG_QUERIES_RESULT_CLIENT_RECEIVED 10100)
 
-add_executable(build_hnsw_index benchmark/setup/hnsw/build_hnsw_index.cpp)
-target_include_directories(build_hnsw_index PRIVATE ${CMAKE_SOURCE_DIR}/benchmark/setup/hnsw ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
+add_executable(build_hnsw_index benchmark/perf_data/hnsw/build_hnsw_index.cpp)
+target_include_directories(build_hnsw_index PRIVATE ${CMAKE_SOURCE_DIR}/benchmark/perf_data/hnsw ${Python_INCLUDE_DIRS} ${Python_NumPy_INCLUDE_DIRS})
 target_link_libraries(build_hnsw_index Boost::python Boost::numpy ${Python_LIBRARIES})
 
 add_executable(run_benchmark benchmark/benchmark_client.cpp benchmark/run_benchmark.cpp benchmark/benchmark_dataset.cpp vortex_udls/serialize_utils.cpp)
@@ -131,6 +131,10 @@ add_custom_command(TARGET start_webservice POST_BUILD
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/clear_log.sh
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/perf_data
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n1/perf_data
+    COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/perf_data
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/perf_data
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/perf_data
@@ -155,11 +159,6 @@ add_custom_command(TARGET start_webservice POST_BUILD
     COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/start_webservice
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n4/start_webservice
     COMMAND chmod 755 ${CMAKE_CURRENT_BINARY_DIR}/cfg/clear_log.sh.tmp
-    # symlink precomputed indices to the config folder of each node
-    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/hnsw_index ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/hnsw_index
-    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/hnsw_index ${CMAKE_CURRENT_BINARY_DIR}/cfg/n1/hnsw_index
-    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/hnsw_index ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/hnsw_index
-    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/hnsw_index ${CMAKE_CURRENT_BINARY_DIR}/cfg/n3/hnsw_index
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cfg/clear_log.sh.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/layout.json.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/dfgs.json.tmp

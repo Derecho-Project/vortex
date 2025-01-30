@@ -275,7 +275,7 @@ void GroupedEmbeddingsForSearch::initialize_cpu_hnsw_search(int cluster_id) {
      const int& ef = this->hnsw_config.ef_construction;
      const int& ef_search = this->hnsw_config.ef_search;
 
-     const fs::path prebuilt_indices = fs::path("hnsw_index") / name;
+     const fs::path prebuilt_indices = name;
      const fs::path cluster_file = prebuilt_indices / 
           ("hnsw_m_" + std::to_string(m) + "_ef_" + std::to_string(ef) + "_cluster_" + std::to_string(cluster_id) + ".bin");
      

@@ -34,10 +34,10 @@
                 {
                         "emb_dim":1024,
                         "top_k":20,
-                        "faiss_search_type":0,
-                        "dataset_name": "miniset",
+                        "faiss_search_type":3,
+                        "dataset_name": "perf_data/hnsw_index/miniset",
                         "hnsw_m": 48,
-                        "hnsw_ef_construction": 200,
+                        "hnsw_ef_construction": 300,
                         "hnsw_ef_search": 200,
                         "min_batch_size":1,
                         "max_batch_size":100,

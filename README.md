@@ -96,7 +96,7 @@ To configure the cluster search udl to load the correct dataset when using hnsw,
       "emb_dim":1024,
       "top_k":3,
       "faiss_search_type":3,
-      "dataset_name": "miniset",    // tries to look in benchmark/hnsw_index/miniset
+      "dataset_name": "perf_data/hnsw_index/miniset", // folder containing the prebuilt indicies
       "hnsw_m": 48,                 // hnsw graph connectedness
       "hnsw_ef_construction": 100,  // hnsw exploration factor for construction
       "hnsw_ef_search:" 100         // hnsw exploration factor for search
