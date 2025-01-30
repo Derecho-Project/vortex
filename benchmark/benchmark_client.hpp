@@ -108,6 +108,7 @@ class VortexBenchmarkClient {
 
     std::unordered_map<query_id_t,std::chrono::steady_clock::time_point> query_send_time;
     std::unordered_map<query_id_t,std::chrono::steady_clock::time_point> query_result_time;
+    uint64_t skip;
 
     std::mutex query_id_mtx;
     uint64_t query_count = 0;
@@ -120,7 +121,7 @@ class VortexBenchmarkClient {
 
     public:
 
-    VortexBenchmarkClient();
+    VortexBenchmarkClient(uint64_t skip = 0);
     ~VortexBenchmarkClient();
     
     void setup(uint64_t batch_min_size,uint64_t batch_max_size,uint64_t batch_time_us,uint64_t emb_dim,uint64_t num_result_threads);

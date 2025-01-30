@@ -1,7 +1,8 @@
 
 #include "benchmark_client.hpp"
 
-VortexBenchmarkClient::VortexBenchmarkClient(){
+VortexBenchmarkClient::VortexBenchmarkClient(uint64_t skip){
+    this->skip = skip;
 }
 
 VortexBenchmarkClient::~VortexBenchmarkClient(){
@@ -16,7 +17,7 @@ VortexBenchmarkClient::~VortexBenchmarkClient(){
         t.join();
     }
 
-    // print e2e performance statistics (discarding the first 10%)
+    // print e2e performance statistics (discarding the first 'skip' queries)
     std::vector<query_id_t> queries;
     for (const auto& [query_id, send_time] : query_send_time){
         if(query_result_time.count(query_id) == 0) continue;
@@ -25,7 +26,6 @@ VortexBenchmarkClient::~VortexBenchmarkClient(){
     std::sort(queries.begin(),queries.end());
 
     uint64_t num_queries = queries.size();
-    uint64_t skip = (uint64_t)(num_queries * 0.1);
     std::vector<double> latencies;
     std::chrono::steady_clock::time_point first = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point last;

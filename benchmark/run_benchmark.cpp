@@ -12,6 +12,7 @@
 #define DEFAULT_DIMENSIONS 1024
 #define DEFAULT_NUM_QUERIES 10
 #define DEFAULT_NUM_RESULT_THREADS 1
+#define DEFAULT_WARMUP 0
 
 void print_help(const std::string& bin_name){
     std::cout << "usage: " << bin_name << " [options] <dataset_dir>" << std::endl;
@@ -23,6 +24,7 @@ void print_help(const std::string& bin_name){
     std::cout << " -x <batch_max_size>\t\tmaximum batch size (default: " << DEFAULT_BATCH_MAX_SIZE << ")" << std::endl;
     std::cout << " -u <batch_time_us>\t\tmaximum time to wait for the batch minimum size, in microseconds (default: " << DEFAULT_BATCH_TIME_US << ")" << std::endl;
     std::cout << " -t <num_result_threads>\tnumber of threads for processing results (default: " << DEFAULT_NUM_RESULT_THREADS << ")" << std::endl;
+    std::cout << " -w <num_warmup_queries>\tsend the given number of queries to warm up the system, before starting the benchmark (default: " << DEFAULT_WARMUP << ")" << std::endl;
     std::cout << " -d\t\t\t\tdo not dump timestamps in the remote servers (default: true)" << std::endl;
     std::cout << " -h\t\t\t\tshow this help" << std::endl;
 }
@@ -44,9 +46,10 @@ int main(int argc, char** argv){
     uint64_t num_queries = DEFAULT_NUM_QUERIES;
     uint64_t emb_dim = DEFAULT_DIMENSIONS;
     uint64_t num_result_threads = DEFAULT_NUM_RESULT_THREADS;
+    uint64_t num_warmup = DEFAULT_WARMUP;
     bool dump = true;
 
-    while ((c = getopt(argc, argv, "n:e:r:b:x:u:t:dh")) != -1){
+    while ((c = getopt(argc, argv, "n:e:r:b:x:u:t:w:dh")) != -1){
         switch(c){
             case 'n':
                 num_queries = strtoul(optarg,NULL,10);
@@ -68,6 +71,9 @@ int main(int argc, char** argv){
                 break;
             case 't':
                 num_result_threads = strtoul(optarg,NULL,10);
+                break;
+            case 'w':
+                num_warmup = strtoul(optarg,NULL,10);
                 break;
             case 'd':
                 dump = false;
@@ -100,18 +106,49 @@ int main(int argc, char** argv){
     std::cout << "  batch_max_size = " << batch_max_size << std::endl;
     std::cout << "  batch_time_us = " << batch_time_us << std::endl;
     std::cout << "  num_result_threads = " << num_result_threads << std::endl;
+    std::cout << "  num_warmup_queries = " << num_warmup << std::endl;
     std::cout << "  dump = " << dump << std::endl;
     std::cout << "  dataset_dir = " << dataset_dir << std::endl;
 
     VortexBenchmarkDataset dataset(dataset_dir,num_queries,emb_dim);
-    VortexBenchmarkClient vortex;
+    VortexBenchmarkClient vortex(num_warmup);
 
     // setup
     std::cout << "setting up client ..." << std::endl;
     vortex.setup(batch_min_size,batch_max_size,batch_time_us,emb_dim,num_result_threads);
 
+    // warmup
+    if(num_warmup > 0){
+        std::cout << "warmup: sending " << num_warmup << " queries ..." << std::endl;
+        auto warmup_start = std::chrono::steady_clock::now();
+        auto extra_time = std::chrono::nanoseconds(0);
+        for(uint64_t i=0;i<num_warmup;i++){
+            auto start = std::chrono::steady_clock::now();
+            uint64_t next_query_index = dataset.get_next_query_index();
+            auto query_text = dataset.get_query(next_query_index);
+            auto query_emb = dataset.get_embeddings(next_query_index);
+            uint64_t query_id = vortex.query(query_text,query_emb);
+            
+            auto end = std::chrono::steady_clock::now();
+            if(rate_control){
+                auto elapsed = end - start + extra_time;
+                auto sleep_time = iteration_time - elapsed;
+                start = std::chrono::steady_clock::now();
+                std::this_thread::sleep_for(sleep_time);
+                extra_time = std::chrono::steady_clock::now() - start - sleep_time;
+            }
+        }
+        
+        std::cout << "  all sent, waiting results ..." << std::endl;
+        vortex.wait_results();
+        
+        std::chrono::milliseconds elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - warmup_start);
+        std::cout << "  system warmed up in " << elapsed.count() << " ms" << std::endl;
+        dataset.reset();
+    }
+
     // send queries
-    std::cout << "sending " << num_queries << " queries ..." << std::endl;
+    std::cout << "starting benchmark: sending " << num_queries << " queries ..." << std::endl;
     std::unordered_map<uint64_t,uint64_t> query_id_to_index;
     auto extra_time = std::chrono::nanoseconds(0);
     for(uint64_t i=0;i<num_queries;i++){
