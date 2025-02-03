@@ -46,6 +46,9 @@ include_directories(
 
 
 
+add_executable(run_encoder_example benchmark/run_encoder_example.cpp vortex_udls/serialize_utils.cpp)
+target_link_libraries(run_encoder_example derecho::cascade)
+
 add_executable(start_webservice webservice/start_webservice.cpp webservice/webservice.cpp webservice/vortex_webservice.cpp webservice/cascade_client.cpp vortex_udls/serialize_utils.cpp)
 target_link_libraries(start_webservice ${Boost_LIBRARIES} derecho::cascade)
 
