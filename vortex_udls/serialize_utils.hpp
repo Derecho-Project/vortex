@@ -100,6 +100,40 @@ public:
     void reset();
 };
 
+// in the format <query_id, client_id, query_text>
+using encoder_query_t = std::tuple<query_id_t, uint32_t, std::shared_ptr<std::string>>;
+
+/** Similar to EmbeddingQueryBatcher, but is used to gather and serialize queries
+ * to the encoder UDL to be transformed into an EmbeddingQueryBatcher
+ */
+class EncoderQueryBatcher {
+private:
+    std::vector<encoder_query_t> _queries;
+
+private:
+    static constexpr uint32_t HEADER_SIZE = sizeof(uint32_t);
+    static constexpr uint32_t METADATA_SIZE = sizeof(uint32_t) * 2 + sizeof(query_id_t);
+    
+    // maps from query_id to number of bytes used to encode query string
+    std::unordered_map<query_id_t, uint32_t> _text_size_mapping;
+
+    // blob representation of this class, updated when serialize() is called
+    std::shared_ptr<derecho::cascade::Blob> _blob_repr;
+
+public:
+    // size_hint is used to reserve space in the underlying
+    // vector for performance optimization
+    EncoderQueryBatcher(uint64_t size_hint = 1000);
+
+    void add_query(const encoder_query_t &query);
+    void add_query(query_id_t query_id, uint32_t node_id, std::shared_ptr<std::string> query_text);
+
+    std::shared_ptr<derecho::cascade::Blob> get_blob() const;
+
+    void serialize();
+    void reset();
+};
+
 /*
  * This encapsulates the results of the cluster search.
  * 
