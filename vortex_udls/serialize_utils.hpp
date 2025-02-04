@@ -108,22 +108,29 @@ using encoder_query_t = std::tuple<query_id_t, uint32_t, std::shared_ptr<std::st
  */
 class EncoderQueryBatcher {
 private:
+    uint32_t _emb_size;
     std::vector<encoder_query_t> _queries;
 
 private:
-    static constexpr uint32_t HEADER_SIZE = sizeof(uint32_t);
-    static constexpr uint32_t METADATA_SIZE = sizeof(uint32_t) * 2 + sizeof(query_id_t);
+    // number of queries, embeddings position (EMPTY SLOT)
+    static constexpr uint32_t HEADER_SIZE = sizeof(uint32_t) * 2;
+
+    // query_id, client_id, query_text_position, query_text_size, embeddings_position, query_emb_size
+    static constexpr uint32_t METADATA_SIZE = sizeof(uint32_t) * 5 + sizeof(query_id_t);
     
     // maps from query_id to number of bytes used to encode query string
     std::unordered_map<query_id_t, uint32_t> _text_size_mapping;
 
     // blob representation of this class, updated when serialize() is called
     std::shared_ptr<derecho::cascade::Blob> _blob_repr;
+    
+    uint32_t _total_obj_size;
+    uint32_t _total_text_size;
 
 public:
-    // size_hint is used to reserve space in the underlying
-    // vector for performance optimization
-    EncoderQueryBatcher(uint64_t size_hint = 1000);
+    // emb_dim: specify the desired number of dims for the encoded text
+    // size_hint: used to reserve space in the underlying vector for performance optimization
+    EncoderQueryBatcher(uint32_t emb_dim, uint64_t size_hint = 1000);
 
     void add_query(const encoder_query_t &query);
     void add_query(query_id_t query_id, uint32_t node_id, std::shared_ptr<std::string> query_text);

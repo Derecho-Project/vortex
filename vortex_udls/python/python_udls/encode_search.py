@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import json
 import struct
 import warnings
@@ -15,94 +16,47 @@ from derecho.cascade.member_client import TimestampLogger
 warnings.filterwarnings("ignore")
 
 class Batch:
-    def __init__(self, capacity: int):
-        self._size = 0 
-        self._capacity = capacity
-
-        self._query_ids = np.ndarray(shape=(self._capacity, ), dtype=np.uint64)
-        self._client_ids = np.ndarray(shape=(self._capacity, ), dtype=np.uint32)
-        self._text: list[str] = [""] * self._capacity
-        self._total_text_size = 0
+    def __init__(self):
+        self._bytes: np.ndarray = np.ndarray(shape=(0, ), dtype=np.uint8)
+        self._strings: list[str] = []
     
     @property
     def query_list(self):
-        return self._text[:self._size]
+        return self._strings
 
-    def deserialize(self, data: bytes):
-        # NOTE: assumes the endiannesss of machines is same
-        # reference a slice of the data without copying it
-        view = memoryview(data)
-        offset = 0
+    def deserialize(self, data: np.ndarray):
+        self._bytes = data
 
-        # unpack how many records
-        (count,) = struct.unpack_from('<I', data, offset)
-        offset += 4
+        # structured dtype
+        header_type = np.dtype([
+            ('count', np.uint32),
+            ('embeddings_start', np.uint32)
+        ])
+        metadata_type = np.dtype([
+            ('query_id', np.uint64),
+            ('client_id', np.uint32),
+            ('text_position', np.uint32),
+            ('text_length', np.uint32),
+            ('embeddings_position', np.uint32),
+            ('embeddings_dim', np.uint32),
+        ])
 
-        self._total_text_size = 0
-        self._size = count
-        self.resize(count)
+        header_start = 0
+        header_end = header_start + header_type.itemsize
+        (count, _) = data[header_start:header_end].view(header_type)[0]
 
-        record_format = "<QII" # Q = 8 bytes, I = 4 bytes
-        record_size = struct.calcsize(record_format)
-        for idx in range(count):
-            # unpack query id, client id, and string length
-            query_id, client_id, str_len = struct.unpack_from(record_format, view, offset)
-            offset += record_size
+        metadata_start = 8
+        metadata_end = metadata_type.itemsize * count + metadata_start
+        self._strings = [""] * count
+        for idx, m in enumerate(data[metadata_start:metadata_end].view(metadata_type)):
+            string_start = m[2]
+            string_length = m[3]
+            string = data[string_start:string_start+string_length].tobytes().decode("utf-8")
+            self._strings[idx] = string
 
-            # unpack string
-            str_view = view[offset:offset+str_len] 
-            offset += str_len
-            str_val = str_view.tobytes().decode('utf-8')
-            self._total_text_size += str_len
-
-            # save
-            self._query_ids[idx] = query_id
-            self._client_ids[idx] = client_id
-            self._text[idx] = str_val 
 
     def serialize(self, embeddings: np.ndarray) -> bytes:
-        # I'm sorry to who ever is reading this, but this is extrememly suspicious
-        # mimic the byte layout of EmbeddingQueryBatcher
-
-        _, emb_dims = embeddings.shape
-        
-        # num queries, embeddings position
-        header_format = "<II"
-        header_size = struct.calcsize(header_format)
-
-        # query id, client id, text position, text length, embedding position, emb length
-        metadata_format = "<QIIIII"
-        metadata_size = struct.calcsize(metadata_format)
-
-        metadata_position = header_size
-        text_position = metadata_position + (self._size * metadata_size)
-        embeddings_position = text_position + self._total_text_size
-
-        # pack header
-        data = bytearray()
-        data += struct.pack(header_format, self._size, embeddings_position)
-
-        # pack metadata
-        for i in range(self._size):
-            query_id = self._query_ids[i]
-            client_id = self._client_ids[i]
-            text_pos = text_position
-            text_len = len(self._text[i])
-            emb_pos = embeddings_position + i * emb_dims
-            emb_len = emb_dims
-
-            text_position += text_len
-
-            data += struct.pack(metadata_format, query_id, client_id, text_pos, text_len, emb_pos, emb_len)
-        
-        # pack string
-        for s in self._text:
-            data += s.encode('utf-8')
-
-        for i in range(self._size):
-            data += embeddings[i, :].tobytes(order='C')
-
-        return data
+        return np.concatenate((self._bytes, embeddings.flatten().astype(np.uint8))).tobytes()
     
     def resize(self, new_size: int):
         """resize batch manager if needed"""
@@ -124,31 +78,40 @@ class EncodeSearchUDL(UserDefinedLogic):
             user_fp16=False,
         )
         self._emb_dim = int(conf["emb_dim"])
-        self._batch = Batch(64)
+        self._batch = Batch()
         self._batch_id = 0
 
     def ocdpo_handler(self, **kwargs):
         key = kwargs["key"]
-        bytes = kwargs["blob"].tobytes()
-
-        self._batch.deserialize(bytes)
+        data = kwargs["blob"]
         
+        start = time.time_ns()
+        self._batch.deserialize(data)
+        end = time.time_ns()
+        print(f"deserialization time: {end - start} ns")
+        
+        start = time.time_ns()
         res: Any = self._encoder.encode(
             self._batch.query_list,
             return_dense=True,
             return_sparse=False,
             return_colbert_vecs=False,
         )
+        end = time.time_ns()
 
         query_embeddings: np.ndarray = res["dense_vecs"]
         query_embeddings_trunc = query_embeddings[:, :self._emb_dim]
-        print("#########################")
-        print("key:", key)
-        print("query_list: ", query_embeddings_trunc.shape)
-        
         self._batch_id += 1
-        key_str = f"/rag/emb/centroids_search/batch{self._batch_id}_"
-        cascade_context.emit(key, self._batch.serialize(query_embeddings_trunc))
+        print(f"encode time: {end - start} ns")
+
+
+        start = time.time_ns()
+        key_str = f"/rag/emb/centroids_search/batch{self._batch_id}"
+        output_bytes = self._batch.serialize(query_embeddings_trunc)
+        end = time.time_ns()
+        print(f"serialization time: {end - start} ns")
+        cascade_context.emit(key_str, output_bytes, message_id=kwargs["message_id"])
+        return None
     
     def __del__(self):
         pass
