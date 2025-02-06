@@ -228,7 +228,6 @@ EmbeddingQueryBatchManager::EmbeddingQueryBatchManager(const uint8_t *buffer,uin
     this->header_size = sizeof(uint32_t) * 2;
     this->metadata_size = sizeof(uint32_t) * 5 + sizeof(query_id_t);
     this->embeddings_size = buffer_size - this->embeddings_position;
-   
     if(copy_embeddings){
         this->buffer_size = buffer_size;
     } else {
@@ -835,13 +834,6 @@ void EncoderQueryBatcher::serialize() {
         const uint32_t metadata_position = EncoderQueryBatcher::HEADER_SIZE;
         const uint32_t text_position = metadata_position + (num_queries * EncoderQueryBatcher::METADATA_SIZE);
         const uint32_t embeddings_position = text_position + _total_text_size;
-
-        std::cout << "size: " << num_queries << std::endl;
-        std::cout << "metadata_pos: " << metadata_position << std::endl;
-        std::cout << "text_pos: " << text_position << std::endl;
-        std::cout << "embeddings_pos: " << embeddings_position << std::endl;
-        std::cout << "total size: " << _total_text_size << std::endl;
-
 
         const uint32_t header[2] = {num_queries, embeddings_position};
         static_assert(EncoderQueryBatcher::HEADER_SIZE == sizeof(header));

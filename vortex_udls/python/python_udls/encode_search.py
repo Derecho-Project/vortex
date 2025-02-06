@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import time
 import json
-import struct
 import warnings
 
 import numpy as np
@@ -19,10 +18,15 @@ class Batch:
     def __init__(self):
         self._bytes: np.ndarray = np.ndarray(shape=(0, ), dtype=np.uint8)
         self._strings: list[str] = []
+        self._client_id: int = 0
     
     @property
     def query_list(self):
         return self._strings
+    
+    @property
+    def client_id(self):
+        return self._client_id
 
     def deserialize(self, data: np.ndarray):
         self._bytes = data
@@ -48,6 +52,12 @@ class Batch:
         metadata_start = 8
         metadata_end = metadata_type.itemsize * count + metadata_start
         self._strings = [""] * count
+
+        # get one record to grab client id
+        # saves on bne in loop
+        metadata_record = data[metadata_start:metadata_start + metadata_type.itemsize].view(metadata_type)[0]
+        self._client_id = metadata_record[1]
+
         for idx, m in enumerate(data[metadata_start:metadata_end].view(metadata_type)):
             string_start = m[2]
             string_length = m[3]
@@ -56,16 +66,11 @@ class Batch:
 
 
     def serialize(self, embeddings: np.ndarray) -> bytes:
-        return np.concatenate((self._bytes, embeddings.flatten().astype(np.uint8))).tobytes()
+        # lesson learned
+        # do not use .astype as that is a cast on each element of the array
+        # use .view, which is simular to C++'s reinterpret_cast
+        return np.concatenate((self._bytes, embeddings.flatten().view(np.uint8))).tobytes()
     
-    def resize(self, new_size: int):
-        """resize batch manager if needed"""
-        if new_size > self._capacity:
-            self._capacity = new_size 
-            self._query_ids = np.resize(self._query_ids, new_shape=(self._capacity, ))
-            self._client_ids = np.resize(self._query_ids, new_shape=(self._capacity, ))
-            self._text = [""] * self._capacity
-
 class EncodeSearchUDL(UserDefinedLogic):
     def __init__(self, conf_str: str):
 
@@ -82,34 +87,24 @@ class EncodeSearchUDL(UserDefinedLogic):
         self._batch_id = 0
 
     def ocdpo_handler(self, **kwargs):
-        key = kwargs["key"]
         data = kwargs["blob"]
         
-        start = time.time_ns()
         self._batch.deserialize(data)
-        end = time.time_ns()
-        print(f"deserialization time: {end - start} ns")
         
-        start = time.time_ns()
         res: Any = self._encoder.encode(
             self._batch.query_list,
             return_dense=True,
             return_sparse=False,
             return_colbert_vecs=False,
         )
-        end = time.time_ns()
-
         query_embeddings: np.ndarray = res["dense_vecs"]
         query_embeddings_trunc = query_embeddings[:, :self._emb_dim]
         self._batch_id += 1
-        print(f"encode time: {end - start} ns")
 
 
-        start = time.time_ns()
-        key_str = f"/rag/emb/centroids_search/batch{self._batch_id}"
+        # format should be {client}_{batch_id}
+        key_str = f"{self._batch.client_id}_{self._batch_id}"
         output_bytes = self._batch.serialize(query_embeddings_trunc)
-        end = time.time_ns()
-        print(f"serialization time: {end - start} ns")
         cascade_context.emit(key_str, output_bytes, message_id=kwargs["message_id"])
         return None
     
