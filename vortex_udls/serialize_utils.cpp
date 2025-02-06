@@ -228,6 +228,7 @@ EmbeddingQueryBatchManager::EmbeddingQueryBatchManager(const uint8_t *buffer,uin
     this->header_size = sizeof(uint32_t) * 2;
     this->metadata_size = sizeof(uint32_t) * 5 + sizeof(query_id_t);
     this->embeddings_size = buffer_size - this->embeddings_position;
+
     if(copy_embeddings){
         this->buffer_size = buffer_size;
     } else {
