@@ -80,7 +80,7 @@ class EncodeSearchUDL(UserDefinedLogic):
         self._encoder = BGEM3FlagModel(
             model_name_or_path=conf["encoder_config"]["model"],
             device=conf["encoder_config"]["device"],
-            user_fp16=False,
+            use_fp16=False,
         )
         self._emb_dim = int(conf["emb_dim"])
         self._batch = Batch()
