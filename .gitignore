@@ -37,3 +37,8 @@ build-*
 *.arrow
 *inat/*
 *google-landmark/*
+
+
+FLMR
+scripts/faiss
+benchmark/perf_data/

@@ -15,11 +15,11 @@
         "type_alias":   "VolatileCascadeStoreWithStringKey",
         "layout":       [
                             {
-                                "min_nodes_by_shard": ["1","1","1"],
-                                "max_nodes_by_shard": ["1","1","1"],
-                                "delivery_modes_by_shard": ["Ordered","Ordered","Ordered"],
-                                "reserved_node_ids_by_shard": [["0"],["1"],["2"]],
-                                "profiles_by_shard": ["DEFAULT","DEFAULT","DEFAULT"]
+                                "min_nodes_by_shard": ["1","1","1","1"],
+                                "max_nodes_by_shard": ["1","1","1","1"],
+                                "delivery_modes_by_shard": ["Ordered","Ordered","Ordered","Ordered"],
+                                "reserved_node_ids_by_shard": [["0"],["1"],["2"],["3"]],
+                                "profiles_by_shard": ["DEFAULT","DEFAULT","DEFAULT","DEFAULT"]
                             },
                             {
                                 "min_nodes_by_shard": ["1","1","1"],
@@ -52,6 +52,13 @@
     {
         "type_alias":   "TriggerCascadeNoStoreWithStringKey",
         "layout":       [
+                            {
+                                "min_nodes_by_shard": ["1","1","1","1"],
+                                "max_nodes_by_shard": ["1","1","1","1"],
+                                "delivery_modes_by_shard": ["Ordered","Ordered","Ordered","Ordered"],
+                                "reserved_node_ids_by_shard": [["0"],["1"],["2"],["3"]],
+                                "profiles_by_shard": ["DEFAULT","DEFAULT","DEFAULT","DEFAULT"]
+                            },
                             {
                                 "min_nodes_by_shard": ["1"],
                                 "max_nodes_by_shard": ["1"],
