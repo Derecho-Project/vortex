@@ -13,16 +13,16 @@ find_package(derecho CONFIG REQUIRED)
 find_package(cascade CONFIG REQUIRED)
 
 # Find Faiss package
-find_package(Faiss REQUIRED)
+# find_package(Faiss REQUIRED)
 # Find CUDA Toolkit if using Faiss with GPU support
 find_package(CUDAToolkit REQUIRED)
 # Find Hnswlib package
-find_package(hnswlib REQUIRED)
+# find_package(hnswlib REQUIRED)
 
 # Boost
-find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
-find_package(Boost REQUIRED COMPONENTS system filesystem numpy)
-include_directories(${Boost_INCLUDE_DIRS})
+# find_package(Python REQUIRED COMPONENTS Interpreter Development NumPy)
+# find_package(Boost REQUIRED COMPONENTS system filesystem numpy)
+# include_directories(${Boost_INCLUDE_DIRS})
 
 include(GNUInstallDirs)
 if (NOT DEFINED CMAKE_INSTALL_BINDIR)
