@@ -1,6 +1,0 @@
-/rag/emb/centroids_obj VCSS 0 cluster[0-9]+
-/rag/emb/centroids_search VCSS 0 cluster[0-9]+
-/rag/emb/clusters VCSS 1 cluster[0-9]+
-/rag/emb/clusters_search VCSS 1 cluster[0-9]+
-/rag/generate VCSS 2 _cluster[0-9a-fA-F]+
-/rag/doc PCSS 0
