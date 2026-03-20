@@ -1,0 +1,21 @@
+[
+    {
+        "id": "100000000-1aaa-00a0-0000-000000000000",
+        "desc": "Example Dataflow graph with Python UDL",
+        "graph": [
+            {
+                "pathname": "/print",
+                "user_defined_logic_list": ["6cfe8f64-3a1d-11ed-8e7e-0242ac110006"],
+                "user_defined_logic_stateful_list": ["singlethreaded"],
+                "user_defined_logic_config_list": [
+                    {
+                        "python_path":["python_udls"],
+                        "module":"sample_udl",
+                        "entry_class":"ConsolePrinterUDL",
+                        "udl_conf_key1":"sample config key 1"
+                    }],
+                "destinations": [{}]
+            }
+        ]
+    }
+]

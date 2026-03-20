@@ -41,6 +41,9 @@ add_subdirectory(src)
 # preFLMR pipeline (Python files + configuration)
 add_subdirectory(preFLMR_pipeline)
 
+# audioQuery pipeline (Python files + configuration)
+add_subdirectory(audioQuery_pipeline)
+
 # ---- Optional pipelines ----
 if (VORTEX_BUILD_VECTOR_SEARCH_PIPELINE)
   message(STATUS "Building vector_search_pipeline")

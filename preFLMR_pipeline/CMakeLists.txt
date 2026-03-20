@@ -62,6 +62,8 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
 # Create node-specific symlinks (n0-n4)
 add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
     # Node n0
+    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n0/derecho.cfg
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/derecho.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/layout.json.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/layout.json
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/dfgs.json.tmp
@@ -70,10 +72,14 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/python_udls
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/python_udls
+    COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/client
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/client
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/clear_log.sh.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n0/clear_log.sh
     
     # Node n1
+    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n1/derecho.cfg
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/derecho.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/layout.json.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/layout.json
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/dfgs.json.tmp
@@ -82,10 +88,14 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/python_udls
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/python_udls
+    COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/client
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/client
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/clear_log.sh.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n1/clear_log.sh
     
     # Node n2
+    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n2/derecho.cfg
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/derecho.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/layout.json.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/layout.json
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/dfgs.json.tmp
@@ -94,10 +104,14 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/python_udls
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/python_udls
+    COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/client
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/client
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/clear_log.sh.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n2/clear_log.sh
     
     # Node n3
+    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n3/derecho.cfg
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/derecho.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/layout.json.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/layout.json
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/dfgs.json.tmp
@@ -106,10 +120,14 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/python_udls
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/python_udls
+    COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/client
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/client
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/clear_log.sh.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n3/clear_log.sh
     
     # Node n4
+    COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n4/derecho.cfg
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/derecho.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/layout.json.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/layout.json
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/dfgs.json.tmp
@@ -118,6 +136,8 @@ add_custom_command(TARGET setup_preflmr_pipeline POST_BUILD
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/udl_dlls.cfg
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/python_udls
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/python_udls
+    COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/client
+        ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/client
     COMMAND ln -sf ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/clear_log.sh.tmp
         ${CMAKE_BINARY_DIR}/preFLMR_pipeline/cfg/n4/clear_log.sh
     

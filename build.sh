@@ -49,6 +49,3 @@ fi
 make -j `expr $NPROC - 1` 2>err.log
 
 cd ..
-
-echo "Build complete!"
-echo "Errors (if any) logged to: ${build_path}/err.log"

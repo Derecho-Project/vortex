@@ -1,4 +1,1 @@
-../../vortex_udls/libcentroids_search_udl.so
-../../vortex_udls/libclusters_search_udl.so
-../../vortex_udls/libaggregate_udl.so
-../../vortex_udls/libpython_udl_manager.so
+../../../src/libpython_udl_manager.so
