@@ -10,6 +10,8 @@ if (Python3_FOUND)
         ${CMAKE_CURRENT_BINARY_DIR}/config.h
     )
 
+    add_subdirectory(python-udl-interface)
+
     # Build shared library
     add_library(python_udl_manager SHARED 
         ${CMAKE_CURRENT_SOURCE_DIR}/python_udl_manager.cpp

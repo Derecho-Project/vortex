@@ -1,3 +1,6 @@
 [submodule "data/gp-ann"]
 	path = data/gp-ann
 	url = https://github.com/aliciayuting/gp-ann.git
+[submodule "src/python-udl-interface"]
+	path = src/python-udl-interface
+	url = https://github.com/Derecho-Project/python-udl-interface.git
