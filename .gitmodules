@@ -4,3 +4,6 @@
 [submodule "src/python-udl-interface"]
 	path = src/python-udl-interface
 	url = https://github.com/Derecho-Project/python-udl-interface.git
+[submodule "audioQuery_pipeline/python_udls/SenseVoice"]
+	path = audioQuery_pipeline/python_udls/SenseVoice
+	url = https://github.com/aliciayuting/SenseVoice.git
