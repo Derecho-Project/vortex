@@ -1,0 +1,2 @@
+rm -rf .plog;rm -rf ./*.log;rm -rf ./*.btr;rm -rf ./*.dat
+clear
