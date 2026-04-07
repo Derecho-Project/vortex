@@ -46,7 +46,7 @@ public:
                   << std::endl;
 
         if (g_print_handler) {
-            g_print_handler->invoke<pybind11::object>(
+            g_print_handler->invoke<void>(
                 std::string("hello world from pyscheduler, key=") + key_string);
         }
     }
@@ -65,7 +65,7 @@ public:
             auto handler = g_python_manager->loadPythonModule("hello_world", "invoke");
             g_print_handler =
                 std::make_unique<pyscheduler::PyManager::InvokeHandler>(std::move(handler));
-            g_print_handler->invoke<pybind11::object>("initialized");
+            g_print_handler->invoke<void>("initialized");
         }
     }
 
