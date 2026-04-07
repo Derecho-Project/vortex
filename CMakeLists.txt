@@ -34,6 +34,9 @@ endif()
 # ---- Pipeline selection options ----
 option(VORTEX_BUILD_VECTOR_SEARCH_PIPELINE "Build vector_search_pipeline" OFF)
 
+# ---- Always enable test cases ----
+enable_testing()
+
 # ---- Always build core components ----
 # Python UDL manager (shared library)
 add_subdirectory(src)
@@ -46,6 +49,9 @@ add_subdirectory(audioQuery_pipeline)
 
 # example pipeline (Python files + configuration)
 add_subdirectory(example_pipeline)
+
+# example scheduling (Python files + configuration)
+add_subdirectory(example_scheduler)
 
 # ---- Optional pipelines ----
 if (VORTEX_BUILD_VECTOR_SEARCH_PIPELINE)

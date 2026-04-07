@@ -1,0 +1,5 @@
+#include <vortex_scheduler/messages.hpp>
+
+VORTEX_SCHEDULER_NAMESPACE_BEGIN
+
+VORTEX_SCHEDULER_NAMESPACE_END

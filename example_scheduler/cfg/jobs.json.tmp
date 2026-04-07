@@ -1,0 +1,38 @@
+{
+    "tasks": [
+        {
+            "task_id": 0,
+            "pathname": "/A",
+            "udl_uuid": "24e10f1c-1100-11eb-1111-0111ac110002"
+        },
+        {
+            "task_id": 1,
+            "pathname": "/B",
+            "udl_uuid": "a945d81b-53c7-43c3-b461-12c85d6883ab"
+        },
+        {
+            "task_id": 2,
+            "pathname": "/C",
+            "udl_uuid": "4f64e67a-44dd-4721-967d-d6039cc32470"
+        },
+        {
+            "task_id": 3,
+            "pathname": "/D",
+            "udl_uuid": "2bc87cc7-7ade-43d1-9a47-2a497b2fd5c0"
+        }
+    ],
+
+    "graphs": [
+        {
+            "graph_id": 0,
+            "description": "canonical diamond DFG",
+            "task_list": [0, 1, 2, 3],
+            "upstream_by_task": [
+                { "task_id": 0, "from": [] },
+                { "task_id": 1, "from": [0] },
+                { "task_id": 2, "from": [0] },
+                { "task_id": 3, "from": [1,2] }
+            ]
+        }
+    ]
+}

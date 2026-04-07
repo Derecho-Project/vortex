@@ -1,5 +1,7 @@
 # Build Python UDL Manager library
 find_package(Python3 3.10.0 QUIET COMPONENTS Interpreter Development Development.Module Development.Embed NumPy)
+    
+add_subdirectory(scheduler-components)
 
 if (Python3_FOUND)
     message(STATUS "Python3 found: Building python_udl_manager")
