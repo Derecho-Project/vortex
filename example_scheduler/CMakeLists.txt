@@ -69,6 +69,18 @@ target_link_libraries(d_udl
     vortex_scheduler
 )
 
+add_library(scheduler_udl SHARED scheduler_udl.cpp)
+target_include_directories(scheduler_udl PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(scheduler_udl
+    PRIVATE
+    derecho::cascade
+    vortex_scheduler
+)
+
 add_executable(a_client a_client.cpp)
 target_include_directories(a_client PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
@@ -76,6 +88,18 @@ target_include_directories(a_client PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
 target_link_libraries(a_client
+    PRIVATE
+    derecho::cascade
+    vortex_scheduler
+)
+
+add_executable(scheduler_node scheduler_node.cpp)
+target_include_directories(scheduler_node PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(scheduler_node
     PRIVATE
     derecho::cascade
     vortex_scheduler
@@ -133,5 +157,8 @@ add_custom_command(TARGET a_udl POST_BUILD
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/dfgs.json.tmp
         ${CMAKE_CURRENT_SOURCE_DIR}/cfg/jobs.json.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/udl_dlls.cfg.tmp
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n0/derecho.cfg
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n1/derecho.cfg
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n2/derecho.cfg
     COMMENT "prepare example configuration"
 )

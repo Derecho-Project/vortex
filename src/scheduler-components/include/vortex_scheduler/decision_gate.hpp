@@ -5,7 +5,7 @@
 #include <deque>
 #include <unordered_map>
 
-#include <vortex_scheduler/messages.hpp>
+#include "messages.hpp"
 
 VORTEX_SCHEDULER_NAMESPACE_BEGIN
 

@@ -19,7 +19,8 @@
 #include <cascade/object.hpp>
 #include <derecho/mutils-serialization/SerializationSupport.hpp>
 #include <type_traits>
-#include <vortex_scheduler/core.hpp>
+
+#include "core.hpp"
 
 VORTEX_SCHEDULER_NAMESPACE_BEGIN
 

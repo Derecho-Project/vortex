@@ -56,7 +56,9 @@ protected:
 		(void)typed_ctxt;
 		(void)worker_id;
 
-		std::string combined;
+		std::size_t b_count = 0;
+		std::size_t c_count = 0;
+		std::size_t total_payload_bytes = 0;
 		for(const auto& handle : binding.inputs) {
 			auto payload_span = _join_service->resolve(handle);
 			if(!payload_span) {
@@ -66,18 +68,25 @@ protected:
 			auto msgB = StepBMessage::from_bytes(
 				nullptr, reinterpret_cast<const uint8_t*>(payload_span->data()));
 			if(msgB) {
-				combined += "[B:" + msgB->message + "] ";
+				++b_count;
+				total_payload_bytes += msgB->message.size();
 				continue;
 			}
 
 			auto msgC = StepCMessage::from_bytes(
 				nullptr, reinterpret_cast<const uint8_t*>(payload_span->data()));
 			if(msgC) {
-				combined += "[C:" + msgC->message + "] ";
+				++c_count;
+				total_payload_bytes += msgC->message.size();
 			}
 		}
 
-		spdlog::info("[d_udl] job={} READY inputs={}", binding.task.job_id, combined);
+		report_completion(binding, worker_id, typed_ctxt);
+		spdlog::info("[d_udl] job={} READY b_inputs={} c_inputs={} total_payload_bytes={}",
+					 binding.task.job_id,
+					 b_count,
+					 c_count,
+					 total_payload_bytes);
 	}
 
 public:

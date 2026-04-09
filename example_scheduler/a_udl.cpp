@@ -23,6 +23,10 @@
 namespace derecho {
 namespace cascade {
 
+namespace {
+constexpr std::size_t kStressPayloadBytes = 20u * 1024u * 1024u;
+}
+
 #define MY_UUID "24e10f1c-1100-11eb-1111-0111ac110002"
 #define MY_DESC "Demo DLL UDL: on each message, build 256x256 GPU tensors and call Python add_gpu."
 VORTEX_DEFINE_UDL_METADATA(MY_UUID, MY_DESC)
@@ -54,16 +58,24 @@ protected:
 	void execute_udl(scheduler::TaskBinding binding,
 					 DefaultCascadeContextType* typed_ctxt,
 					 uint32_t worker_id) override {
+		report_completion(binding, worker_id, typed_ctxt);
 		spdlog::info("[a_udl] execute start job={} graph={} task={} worker={}",
 					 binding.task.job_id,
 					 binding.task.graph_id,
 					 binding.task.task_id,
 					 worker_id);
-		StepAMessage out {"A processed job " + std::to_string(binding.task.job_id)};
+		std::string body(kStressPayloadBytes, 'A');
+		const std::string job_marker = "job=" + std::to_string(binding.task.job_id) + ";";
+		std::copy(job_marker.begin(),
+				  job_marker.end(),
+				  body.begin());
+		StepAMessage out{ std::move(body) };
 		std::vector<std::byte> payload(out.size_estimate());
 		out.to_bytes(reinterpret_cast<uint8_t*>(payload.data()));
 		finish(binding, worker_id, std::move(payload), typed_ctxt);
-		spdlog::info("[a_udl] execute done job={} (output queued)", binding.task.job_id);
+		spdlog::info("[a_udl] execute done job={} payload_bytes={} (output queued)",
+					 binding.task.job_id,
+					 out.message.size());
 	}
 
 public:

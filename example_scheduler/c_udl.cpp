@@ -71,8 +71,11 @@ protected:
 			return;
 		}
 
-		spdlog::info("[c_udl] execute job={} msg='{}'", binding.task.job_id, in_msg->message);
-		StepCMessage out_msg {std::string("C saw: ") + in_msg->message};
+		report_completion(binding, worker_id, typed_ctxt);
+		spdlog::info("[c_udl] execute job={} in_payload_bytes={}",
+					 binding.task.job_id,
+					 in_msg->message.size());
+		StepCMessage out_msg{ std::string("C saw: ") + in_msg->message };
 		std::vector<std::byte> payload(out_msg.size_estimate());
 		out_msg.to_bytes(reinterpret_cast<uint8_t*>(payload.data()));
 		finish(binding, worker_id, std::move(payload), typed_ctxt);
