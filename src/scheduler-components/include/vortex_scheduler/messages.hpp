@@ -24,8 +24,9 @@
 VORTEX_SCHEDULER_NAMESPACE_BEGIN
 
 enum class MessageClass : uint8_t {
-	Control = 1,
-	Data = 2,
+	SchedulerCommand = 1,
+	WorkerStatus = 2,
+	TaskOutput = 3,
 };
 
 /// @brief default implementation of serialization
@@ -160,6 +161,10 @@ struct TaskOutput : public mutils::ByteRepresentable, public VortexSerde<TaskOut
 		, payload(payload) { }
 
 	DEFAULT_SERIALIZATION_SUPPORT(TaskOutput, worker_id, job_id, target_task_id, source_task_id, graph_id, payload_size);
+};
+
+struct WireHeader {
+	MessageClass kind;
 };
 
 VORTEX_SCHEDULER_NAMESPACE_END

@@ -25,15 +25,15 @@ std::optional<TaskBinding> TaskJoinService::recv(const std::string_view& string_
 	const auto* payload_begin = bytes.data() + header_size;
 	std::span<const std::byte> payload(payload_begin, header->payload_size);
 
-	// stash payload
 	const uint64_t payload_id = _next_payload_id++;
-	_payload_store[payload_id] = std::vector<std::byte>(payload.begin(), payload.end());
+	const BufferHandle arena_handle = _payload_arena.put(payload_id, payload);
+	_payload_handles.emplace(payload_id, arena_handle);
 
 	BlobHandle bh;
 	bh.pool_class = 0;
 	bh.segment_id = static_cast<uint32_t>(payload_id);
-	bh.offset = 0;
-	bh.size = static_cast<uint32_t>(payload.size());
+	bh.offset = static_cast<uint32_t>(arena_handle.offset);
+	bh.size = static_cast<uint32_t>(arena_handle.len);
 
 	const auto* node = _dag_registry.find_task(header->graph_id, header->target_task_id);
 	if(node == nullptr) {
@@ -63,11 +63,23 @@ std::optional<TaskBinding> TaskJoinService::recv(const std::string_view& string_
 }
 
 std::optional<std::span<const std::byte>> TaskJoinService::resolve(const BlobHandle& handle) const {
-	auto it = _payload_store.find(handle.segment_id);
-	if(it == _payload_store.end()) {
+	auto it = _payload_handles.find(handle.segment_id);
+	if(it == _payload_handles.end()) {
 		return std::nullopt;
 	}
-	return std::span<const std::byte>(it->second.data(), it->second.size());
+
+	return _payload_arena.resolve_const(it->second);
+}
+
+void TaskJoinService::free(const TaskBinding& binding) {
+	for(const auto& input : binding.inputs) {
+		auto it = _payload_handles.find(input.segment_id);
+		if(it == _payload_handles.end()) {
+			continue;
+		}
+		_payload_arena.take(it->first);
+		_payload_handles.erase(it);
+	}
 }
 
 VORTEX_SCHEDULER_NAMESPACE_END

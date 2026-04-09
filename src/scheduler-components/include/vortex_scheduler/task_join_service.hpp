@@ -11,6 +11,7 @@
 #include <vortex_scheduler/arena.hpp>
 #include <vortex_scheduler/dag_registry.hpp>
 #include <vortex_scheduler/join_table.hpp>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -33,12 +34,16 @@ class TaskJoinService {
     /// @brief resolve a BlobHandle emitted by recv into a payload span
     std::optional<std::span<const std::byte>> resolve(const BlobHandle& handle) const;
 
+    /// @brief release payload storage associated with a previously emitted binding
+    void free(const TaskBinding& binding);
+
     const DagRegistry& dag() const noexcept { return _dag_registry; }
 
   private:
     DagRegistry _dag_registry;
     JoinTable   _join_table;
-    std::unordered_map<uint64_t, std::vector<std::byte>> _payload_store;
+    ArenaAllocator<uint64_t> _payload_arena;
+    std::unordered_map<uint64_t, BufferHandle> _payload_handles;
     uint64_t _next_payload_id = 1;
 };
 
