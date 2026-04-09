@@ -42,6 +42,10 @@ add_executable(task_join_service_tests
   tests/task_join_service_tests.cpp
 )
 
+add_executable(decision_gate_tests
+  tests/decision_gate_tests.cpp
+)
+
 target_compile_features(join_table_tests PRIVATE cxx_std_20)
 target_include_directories(join_table_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(join_table_tests PRIVATE Catch2::Catch2WithMain vortex_scheduler)
@@ -53,12 +57,17 @@ target_include_directories(task_join_service_tests PRIVATE
 )
 target_link_libraries(task_join_service_tests PRIVATE Catch2::Catch2WithMain vortex_scheduler)
 
+target_compile_features(decision_gate_tests PRIVATE cxx_std_20)
+target_include_directories(decision_gate_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(decision_gate_tests PRIVATE Catch2::Catch2WithMain vortex_scheduler)
+
 include(Catch)
 catch_discover_tests(arena_tests)
 catch_discover_tests(message_codec_tests)
 catch_discover_tests(dag_registry_tests)
 catch_discover_tests(join_table_tests)
 catch_discover_tests(task_join_service_tests)
+catch_discover_tests(decision_gate_tests)
 
 add_executable(arena_benchmarks
   benchmarks/arena_bench.cpp

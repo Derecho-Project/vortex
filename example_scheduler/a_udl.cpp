@@ -39,6 +39,7 @@ class TaskA_OCDPO : public VortexWorkerUdl {
 protected:
 	void initialize_resources() override {
 		using pyscheduler::PyManager;
+		spdlog::info("[a_udl] initialize_resources start");
 
 		globals = std::make_unique<GlobalState>();
 		globals->python = std::make_unique<PyManager>();
@@ -46,11 +47,24 @@ protected:
 		globals->python->add_path("/home/yy354/.local/lib/python3.10/site-packages");
 		globals->invoke_a = std::make_unique<PyManager::InvokeHandler>(
 			globals->python->loadPythonModule("step_a", "invoke"));
+		globals->my_task_id = _registry->find_task_id_by_path("/A").value_or(0);
+		spdlog::info("[a_udl] initialize_resources done task_id={}", globals->my_task_id);
 	}
 
-	void execute_udl(scheduler::TaskBinding binding) override { 
-		// _join_service->resolve();
-	};
+	void execute_udl(scheduler::TaskBinding binding,
+					 DefaultCascadeContextType* typed_ctxt,
+					 uint32_t worker_id) override {
+		spdlog::info("[a_udl] execute start job={} graph={} task={} worker={}",
+					 binding.task.job_id,
+					 binding.task.graph_id,
+					 binding.task.task_id,
+					 worker_id);
+		StepAMessage out {"A processed job " + std::to_string(binding.task.job_id)};
+		std::vector<std::byte> payload(out.size_estimate());
+		out.to_bytes(reinterpret_cast<uint8_t*>(payload.data()));
+		finish(binding, worker_id, std::move(payload), typed_ctxt);
+		spdlog::info("[a_udl] execute done job={} (output queued)", binding.task.job_id);
+	}
 
 public:
 	TaskA_OCDPO()
@@ -63,25 +77,3 @@ VORTEX_DEFINE_UDL_ENTRYPOINTS(TaskA_OCDPO)
 } // namespace cascade
 } // namespace derecho
 
-
-			// std::string combined;
-			// for(const auto& handle : binding->inputs) {
-			// 	auto payload_span = globals->join_service->resolve(handle);
-			// 	if(!payload_span) {
-			// 		continue;
-			// 	}
-			// 	// Attempt to parse as StepB then StepC
-			// 	auto msgB = StepBMessage::from_bytes(nullptr,
-			// 		reinterpret_cast<const uint8_t*>(payload_span->data()));
-			// 	if(msgB) {
-			// 		combined += "[B:" + msgB->message + "] ";
-			// 		continue;
-			// 	}
-			// 	auto msgC = StepCMessage::from_bytes(nullptr,
-			// 		reinterpret_cast<const uint8_t*>(payload_span->data()));
-			// 	if(msgC) {
-			// 		combined += "[C:" + msgC->message + "] ";
-			// 	}
-			// }
-
-			// spdlog::info("[d_udl] job={} READY inputs={}", binding->task.job_id, combined);

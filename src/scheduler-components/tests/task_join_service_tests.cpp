@@ -93,3 +93,30 @@ TEST_CASE("TaskJoinService emits binding when all deps present", "[task_join_ser
   CHECK(outB.message == "msgB");
   CHECK(outC.message == "msgC");
 }
+
+TEST_CASE("TaskJoinService emits binding for root task ingress", "[task_join_service]") {
+  const auto dfg_path = write_temp_dfg();
+  auto dag = scheduler::DagRegistry::from_dfg_file(dfg_path, "u");
+  scheduler::TaskJoinService service(dag);
+
+  StepAMessage msgA{"seedA"};
+  std::vector<std::byte> pA(msgA.size_estimate());
+  msgA.to_bytes(reinterpret_cast<uint8_t*>(pA.data()));
+
+  // Root task A has no upstream dependencies in this DAG.
+  scheduler::TaskOutput hA{1, 500, 0, 0, 0, static_cast<uint32_t>(pA.size())};
+  auto pktA = make_packet(hA, pA);
+
+  auto binding = service.recv("/A/500", std::span<const std::byte>(pktA.data(), pktA.size()));
+  REQUIRE(binding.has_value());
+  CHECK(binding->task.graph_id == 0);
+  CHECK(binding->task.job_id == 500);
+  CHECK(binding->task.task_id == 0);
+  REQUIRE(binding->inputs.size() == 1);
+
+  auto payload = service.resolve(binding->inputs[0]);
+  REQUIRE(payload.has_value());
+  auto outA = StepAMessage::from_bytes(nullptr, reinterpret_cast<const uint8_t*>(payload->data()));
+  REQUIRE(outA != nullptr);
+  CHECK(outA->message == "seedA");
+}

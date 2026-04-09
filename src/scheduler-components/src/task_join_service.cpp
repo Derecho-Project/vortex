@@ -7,6 +7,7 @@ TaskJoinService::TaskJoinService(const DagRegistry& dag_registry)
 
 std::optional<TaskBinding> TaskJoinService::recv(const std::string_view& string_key,
 												 const std::span<const std::byte>& bytes) {
+	(void)string_key;
 	if(bytes.empty()) {
 		return std::nullopt;
 	}
@@ -22,6 +23,29 @@ std::optional<TaskBinding> TaskJoinService::recv(const std::string_view& string_
 		return std::nullopt;
 	}
 
+	const auto* node = _dag_registry.find_task(header->graph_id, header->target_task_id);
+	if(node == nullptr) {
+		return std::nullopt;
+	}
+
+	const auto* upstream = _dag_registry.find_upstream(header->graph_id, header->target_task_id);
+	uint16_t expected_inputs = 1;
+	uint16_t dependency_slot = 0;
+	if(upstream && !upstream->empty()) {
+		expected_inputs = static_cast<uint16_t>(upstream->size());
+		bool found_slot = false;
+		for(std::size_t i = 0; i < upstream->size(); ++i) {
+			if(upstream->at(i) == header->source_task_id) {
+				dependency_slot = static_cast<uint16_t>(i);
+				found_slot = true;
+				break;
+			}
+		}
+		if(!found_slot) {
+			return std::nullopt;
+		}
+	}
+
 	const auto* payload_begin = bytes.data() + header_size;
 	std::span<const std::byte> payload(payload_begin, header->payload_size);
 
@@ -34,23 +58,6 @@ std::optional<TaskBinding> TaskJoinService::recv(const std::string_view& string_
 	bh.segment_id = static_cast<uint32_t>(payload_id);
 	bh.offset = static_cast<uint32_t>(arena_handle.offset);
 	bh.size = static_cast<uint32_t>(arena_handle.len);
-
-	const auto* node = _dag_registry.find_task(header->graph_id, header->target_task_id);
-	if(node == nullptr) {
-		return std::nullopt;
-	}
-
-	const auto* upstream = _dag_registry.find_upstream(header->graph_id, header->target_task_id);
-	const uint16_t expected_inputs = upstream ? static_cast<uint16_t>(upstream->size()) : 0;
-	uint16_t dependency_slot = 0;
-	if(upstream) {
-		for(std::size_t i = 0; i < upstream->size(); ++i) {
-			if(upstream->at(i) == header->source_task_id) {
-				dependency_slot = static_cast<uint16_t>(i);
-				break;
-			}
-		}
-	}
 
 	TaskRef task_ref{header->graph_id, header->job_id, header->target_task_id};
 	const uint16_t processor_id = header->target_task_id;

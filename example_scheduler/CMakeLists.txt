@@ -16,7 +16,6 @@ find_package(CUDAToolkit QUIET)
 add_library(a_udl SHARED a_udl.cpp)
 target_include_directories(a_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
@@ -31,7 +30,6 @@ target_link_libraries(a_udl
 add_library(b_udl SHARED b_udl.cpp)
 target_include_directories(b_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
@@ -46,7 +44,6 @@ target_link_libraries(b_udl
 add_library(c_udl SHARED c_udl.cpp)
 target_include_directories(c_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
@@ -61,7 +58,6 @@ target_link_libraries(c_udl
 add_library(d_udl SHARED d_udl.cpp)
 target_include_directories(d_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
@@ -70,6 +66,18 @@ target_link_libraries(d_udl
     derecho::cascade
     pyscheduler::pyscheduler
     CUDA::cudart
+    vortex_scheduler
+)
+
+add_executable(a_client a_client.cpp)
+target_include_directories(a_client PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(a_client
+    PRIVATE
+    derecho::cascade
     vortex_scheduler
 )
 
