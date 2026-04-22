@@ -3,7 +3,7 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 project(example_udl CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(NOT TARGET pyscheduler::pyscheduler)
@@ -13,39 +13,106 @@ find_package(derecho REQUIRED)
 find_package(cascade REQUIRED)
 find_package(CUDAToolkit QUIET)
 
-add_library(example_udl SHARED example_udl.cpp)
-target_include_directories(example_udl PRIVATE
+add_library(a_udl SHARED a_udl.cpp)
+target_include_directories(a_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
-target_link_libraries(example_udl
+target_link_libraries(a_udl
     PRIVATE
     derecho::cascade
     pyscheduler::pyscheduler
     CUDA::cudart
+    vortex_scheduler
 )
 
-add_library(console_printer_udl SHARED console_printer_udl.cpp)
-target_include_directories(console_printer_udl PRIVATE
+add_library(b_udl SHARED b_udl.cpp)
+target_include_directories(b_udl PRIVATE
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
 )
-target_link_libraries(console_printer_udl
+target_link_libraries(b_udl
     PRIVATE
     derecho::cascade
     pyscheduler::pyscheduler
+    CUDA::cudart
+    vortex_scheduler
 )
 
-add_custom_command(TARGET example_udl POST_BUILD
+add_library(c_udl SHARED c_udl.cpp)
+target_include_directories(c_udl PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(c_udl
+    PRIVATE
+    derecho::cascade
+    pyscheduler::pyscheduler
+    CUDA::cudart
+    vortex_scheduler
+)
+
+add_library(d_udl SHARED d_udl.cpp)
+target_include_directories(d_udl PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(d_udl
+    PRIVATE
+    derecho::cascade
+    pyscheduler::pyscheduler
+    CUDA::cudart
+    vortex_scheduler
+)
+
+add_library(scheduler_udl SHARED scheduler_udl.cpp)
+target_include_directories(scheduler_udl PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(scheduler_udl
+    PRIVATE
+    derecho::cascade
+    pyscheduler::pyscheduler
+    vortex_scheduler
+)
+
+add_executable(a_client a_client.cpp)
+target_include_directories(a_client PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(a_client
+    PRIVATE
+    derecho::cascade
+    vortex_scheduler
+)
+
+add_executable(scheduler_node scheduler_node.cpp)
+target_include_directories(scheduler_node PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+)
+target_link_libraries(scheduler_node
+    PRIVATE
+    derecho::cascade
+    vortex_scheduler
+)
+
+
+add_custom_command(TARGET a_udl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/cfg
         ${CMAKE_CURRENT_BINARY_DIR}/cfg
 
     COMMAND ln -sfnT ${CMAKE_CURRENT_SOURCE_DIR}/python_udls
-        ${CMAKE_BINARY_DIR}/example_pipeline/python_udls
+        ${CMAKE_BINARY_DIR}/example_scheduler/python_udls
 
     COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/layout.json.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/layout.json
@@ -59,6 +126,12 @@ add_custom_command(TARGET example_udl POST_BUILD
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n1/dfgs.json
     COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/dfgs.json.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/dfgs.json
+    COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/jobs.json.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/jobs.json
+    COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/jobs.json.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n1/jobs.json
+    COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/jobs.json.tmp
+        ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/jobs.json
     COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n0/udl_dlls.cfg
     COMMAND ln -sfn ${CMAKE_CURRENT_BINARY_DIR}/cfg/udl_dlls.cfg.tmp
@@ -81,9 +154,12 @@ add_custom_command(TARGET example_udl POST_BUILD
     COMMAND ln -sfn ${CMAKE_CURRENT_SOURCE_DIR}/python_udls
         ${CMAKE_CURRENT_BINARY_DIR}/cfg/n2/python_udls
 
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cfg/run.sh.tmp
-            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/layout.json.tmp
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cfg/layout.json.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/dfgs.json.tmp
+        ${CMAKE_CURRENT_SOURCE_DIR}/cfg/jobs.json.tmp
             ${CMAKE_CURRENT_SOURCE_DIR}/cfg/udl_dlls.cfg.tmp
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n0/derecho.cfg
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n1/derecho.cfg
+            ${CMAKE_CURRENT_SOURCE_DIR}/cfg/n2/derecho.cfg
     COMMENT "prepare example configuration"
 )

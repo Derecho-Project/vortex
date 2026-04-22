@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Default build type for single-config generators
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
@@ -34,6 +35,9 @@ endif()
 # ---- Pipeline selection options ----
 option(VORTEX_BUILD_VECTOR_SEARCH_PIPELINE "Build vector_search_pipeline" OFF)
 
+# ---- Always enable test cases ----
+enable_testing()
+
 # ---- Always build core components ----
 # Python UDL manager (shared library)
 add_subdirectory(src)
@@ -46,6 +50,9 @@ add_subdirectory(audioQuery_pipeline)
 
 # example pipeline (Python files + configuration)
 add_subdirectory(example_pipeline)
+
+# example scheduling (Python files + configuration)
+add_subdirectory(example_scheduler)
 
 # ---- Optional pipelines ----
 if (VORTEX_BUILD_VECTOR_SEARCH_PIPELINE)

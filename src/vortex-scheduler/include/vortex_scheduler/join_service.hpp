@@ -1,0 +1,5 @@
+/** in-cache */
+
+class JoinService {
+
+};
