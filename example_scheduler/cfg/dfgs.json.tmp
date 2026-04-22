@@ -8,56 +8,40 @@
                 "shard_dispatcher_list": ["one"],
                 "user_defined_logic_list": ["24e10f1c-1100-11eb-1111-0111ac110002"],
                 "destinations": [{"/B":"put","/C":"put"}],
-                "user_defined_logic_config_list": [{}]
+                "user_defined_logic_config_list": [{}],
+                "user_defined_logic_stateful_list": ["singlethreaded"]
             },
             {
                 "pathname": "/B",
                 "shard_dispatcher_list": ["one"],
                 "user_defined_logic_list": ["a945d81b-53c7-43c3-b461-12c85d6883ab"],
                 "destinations": [{"/D":"put"}],
-                "user_defined_logic_config_list": [{}]
+                "user_defined_logic_config_list": [{}],
+                "user_defined_logic_stateful_list": ["singlethreaded"]
             },
             {
                 "pathname": "/C",
                 "shard_dispatcher_list": ["one"],
                 "user_defined_logic_list": ["4f64e67a-44dd-4721-967d-d6039cc32470"],
                 "destinations": [{"/D":"put"}],
-                "user_defined_logic_config_list": [{}]
+                "user_defined_logic_config_list": [{}],
+                "user_defined_logic_stateful_list": ["singlethreaded"]
             },
             {
                 "pathname": "/D",
                 "shard_dispatcher_list": ["one"],
                 "user_defined_logic_list": ["2bc87cc7-7ade-43d1-9a47-2a497b2fd5c0"],
                 "destinations": [{}],
-                "user_defined_logic_config_list": [{}]
+                "user_defined_logic_config_list": [{}],
+                "user_defined_logic_stateful_list": ["singlethreaded"]
             },
             {
                 "pathname": "/SCHED",
                 "shard_dispatcher_list": ["one"],
                 "user_defined_logic_list": ["3e4d73a1-0fe6-4f53-8d19-2e5f7333a001"],
                 "destinations": [{}],
-                "user_defined_logic_config_list": [{}]
-            },
-            {
-                "pathname": "/scheduleA",
-                "shard_dispatcher_list": ["one"],
-                "user_defined_logic_list": ["24e10f1c-1100-11eb-1111-0111ac110002"],
-                "destinations": [{}],
-                "user_defined_logic_config_list": [{}]
-            },
-            {
-                "pathname": "/scheduleB",
-                "shard_dispatcher_list": ["one"],
-                "user_defined_logic_list": ["a945d81b-53c7-43c3-b461-12c85d6883ab"],
-                "destinations": [{}],
-                "user_defined_logic_config_list": [{}]
-            },
-            {
-                "pathname": "/scheduleC",
-                "shard_dispatcher_list": ["one"],
-                "user_defined_logic_list": ["4f64e67a-44dd-4721-967d-d6039cc32470"],
-                "destinations": [{}],
-                "user_defined_logic_config_list": [{}]
+                "user_defined_logic_config_list": [{}],
+                "user_defined_logic_stateful_list": ["singlethreaded"]
             }
         ]
     }

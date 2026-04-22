@@ -1,86 +1,73 @@
-#include <cstdint>
-#include <iostream>
 #include <memory>
-#include <random>
-#include <string>
-#include <vector>
-#include <unordered_map>
-
-#include <cascade/object.hpp>
-
-#include <cuda_runtime.h>
-#include <dlpack/dlpack.h>
-#include <pybind11/pytypes.h>
+#include <pybind11/pybind11.h>
 #include <pyscheduler/pyscheduler.hpp>
-#include <pyscheduler/tensor.hpp>
-#include <spdlog/logger.h>
+#include <string_view>
+#include <vortex_scheduler/udl_base.hpp>
 
-#include <vortex_scheduler/prelude.hpp>
+#include "scheduler_messages.hpp"
 
-#include "base.hpp"
-#include "diamond_messages.hpp"
+using namespace scheduler;
 
 namespace derecho {
 namespace cascade {
-
-namespace {
-constexpr std::size_t kStressPayloadBytes = 20u * 1024u * 1024u;
-}
 
 #define MY_UUID "24e10f1c-1100-11eb-1111-0111ac110002"
 #define MY_DESC "Demo DLL UDL: on each message, build 256x256 GPU tensors and call Python add_gpu."
 VORTEX_DEFINE_UDL_METADATA(MY_UUID, MY_DESC)
 
-struct GlobalState {
-	std::unique_ptr<pyscheduler::PyManager> python = nullptr;
-	std::unique_ptr<pyscheduler::PyManager::InvokeHandler> invoke_a = nullptr;
-	int my_task_id;
+struct global_state {
+	pyscheduler::PyManager::InvokeHandler step_a;
 };
 
-std::unique_ptr<GlobalState> globals = nullptr;
+std::unique_ptr<global_state> globals = nullptr;
 
 class TaskA_OCDPO : public VortexWorkerUdl {
 protected:
 	void initialize_resources() override {
-		using pyscheduler::PyManager;
-		spdlog::info("[a_udl] initialize_resources start");
+		pyscheduler::PyManager manager;
+		manager.add_path(".");
 
-		globals = std::make_unique<GlobalState>();
-		globals->python = std::make_unique<PyManager>();
-		globals->python->add_path("python_udls");
-		globals->python->add_path("/home/yy354/.local/lib/python3.10/site-packages");
-		globals->invoke_a = std::make_unique<PyManager::InvokeHandler>(
-			globals->python->loadPythonModule("step_a", "invoke"));
-		globals->my_task_id = _registry->find_task_id_by_path("/A").value_or(0);
-		spdlog::info("[a_udl] initialize_resources done task_id={}", globals->my_task_id);
+		globals = std::make_unique<global_state>(
+			global_state{ .step_a = manager.loadPythonModule("python_udls.step_a", "step_a", 16, 1) });
 	}
 
-	void execute_udl(scheduler::TaskBinding binding,
-					 DefaultCascadeContextType* typed_ctxt,
-					 uint32_t worker_id) override {
-		report_completion(binding, worker_id, typed_ctxt);
-		spdlog::info("[a_udl] execute start job={} graph={} task={} worker={}",
-					 binding.task.job_id,
-					 binding.task.graph_id,
-					 binding.task.task_id,
-					 worker_id);
-		std::string body(kStressPayloadBytes, 'A');
-		const std::string job_marker = "job=" + std::to_string(binding.task.job_id) + ";";
-		std::copy(job_marker.begin(),
-				  job_marker.end(),
-				  body.begin());
-		StepAMessage out{ std::move(body) };
-		std::vector<std::byte> payload(out.size_estimate());
-		out.to_bytes(reinterpret_cast<uint8_t*>(payload.data()));
-		finish(binding, worker_id, std::move(payload), typed_ctxt);
-		spdlog::info("[a_udl] execute done job={} payload_bytes={} (output queued)",
-					 binding.task.job_id,
-					 out.message.size());
+	pybind11::object commit_fn(const MetadataA& metadata, const TaskBinding& binding) {
+		// Parse the serialized StepAMessage and forward only its string payload.
+		notify_finish(binding);
+
+		auto payload = view(binding.payload_handles[0]);
+		auto message = StepAMessageView::from_buffer(payload);
+		return pybind11::str(std::string(message.message));
+	}
+
+	void callback_fn(const MetadataA& metadata, TaskBinding&& binding, pybind11::object&& result) {
+		// object is converted into C++ representation and moved into the emit call which serializes it into the output buffer and sends it to the next task.
+		std::string result_str = result.cast<std::string>();
+		emit<StepAMessage>(std::move(binding), std::move(StepAMessage{
+			.metadata = metadata,
+			.message = result_str,
+		}));
+	}
+
+	void execute_udl(TaskBinding&& binding) override {
+		// example of how you would bind the metadata to a closure
+		auto payload = view(binding.payload_handles[0]);
+		auto metadata = StepAMessageView::from_buffer(payload).metadata;
+
+		auto commit_closure = [this, metadata, binding=binding]() {
+			return commit_fn(metadata, binding);
+		};
+
+		auto callback_closure = [this, metadata, binding=binding](pybind11::object&& result) mutable {
+			return callback_fn(metadata, std::move(binding), std::move(result));
+		};
+
+		auto future = globals->step_a.queue_invoke(commit_closure, callback_closure);
 	}
 
 public:
 	TaskA_OCDPO()
-		: VortexWorkerUdl("TaskA_OCDPO", "/A", "/scheduleA", MY_UUID) { }
+		: VortexWorkerUdl("/A", "/A/SCHED", MY_UUID) { }
 
 	VORTEX_DEFINE_CLASS_METHODS(TaskA_OCDPO)
 };
@@ -88,4 +75,3 @@ public:
 VORTEX_DEFINE_UDL_ENTRYPOINTS(TaskA_OCDPO)
 } // namespace cascade
 } // namespace derecho
-
